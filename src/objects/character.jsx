@@ -1,4 +1,4 @@
-import React, {useState, useRef, useMemo} from 'react';
+import React, {useState, useRef, useMemo, forwardRef} from 'react';
 import {Box, useKeyboardControls} from '@react-three/drei'; 
 import {RigidBody } from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
@@ -7,11 +7,12 @@ import { Controls } from "./GameCanvas"
 import { and } from 'three/tsl';
 
 
-export const Cube = () =>{ 
+export const Cube = forwardRef((_,bodyRef) =>{ 
     const [hover, setHover] = useState(false);
-    const cube = useRef(); 
+    //const cube = useRef(); 
     const jump = () =>{
-        cube.current.applyImpulse({x: 0, y:5, z: 0});
+        bodyRef.current.applyImpulse({x: 0, y:10, z: 0});
+
         isOnFloor.current = false;
      }
     const jumpPressed = useKeyboardControls((state) => state[Controls.jump]);
@@ -19,38 +20,38 @@ export const Cube = () =>{
     const backPressed = useKeyboardControls((state) => state[Controls.back]);
     const leftPressed = useKeyboardControls((state) => state[Controls.left]);
     const rightPressed = useKeyboardControls((state) => state[Controls.right]);
+    
     const handleMovement = () => { 
         if(!isOnFloor.current){ 
             return;
         }
-        if(forwardPressed){ 
-            cube.current.applyImpulse({x: -2, y:0, z: 0});
-        }
-        if(backPressed){ 
-            cube.current.applyImpulse({x: 2, y:0, z: 0});
-        }
-        if(leftPressed){ 
-            cube.current.applyImpulse({x: 0, y:0, z: 2});
-        }
-        if(rightPressed){ 
-            cube.current.applyImpulse({x: 0, y:0, z: -2});
-        }
+
+        const dir = new THREE.Vector3();
+        if (forwardPressed)  dir.z -= 10;
+        if (backPressed)     dir.z += 10;
+        if (leftPressed)     dir.x -= 10;
+        if (rightPressed)    dir.x += 10;
+        const vel = bodyRef.current.linvel(); // { x, y, z }
+
+
+        bodyRef.current.setLinvel({x:dir.x,y:vel.y,z: dir.z},true);
 
     }
 
     useFrame((_,delta) => { 
+        handleMovement() ; 
         if(jumpPressed && isOnFloor.current) { 
             jump();
             isOnFloor.current = true; 
         }
-        handleMovement() ; 
+
         
     });
 
     const isOnFloor = useRef(true);
     return( 
         <>
-        <RigidBody ref = {cube} 
+        <RigidBody ref = {bodyRef} 
         position ={[2,5,0]} 
         onCollisionEnter={({other}) => { 
             if (other.rigidBodyObject.name === "floor"){ 
@@ -65,6 +66,7 @@ export const Cube = () =>{
 
         type = "dynamic" 
         colliders = "cuboid" 
+        interpolation
         >
             <Box  args = {[2,1,2]}
             onPointerEnter={() => setHover(true)} 
@@ -73,10 +75,10 @@ export const Cube = () =>{
             receiveShadow
             >
 
-                <meshStandardMaterial attach={"material"} color={hover? "red":"blue"} />
+                <meshStandardMaterial attach={"material"} color={hover? "red":"pink"} />
             </Box>
             </RigidBody>
         </>
 
     );
-}
+});
