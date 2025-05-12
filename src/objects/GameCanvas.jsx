@@ -46,7 +46,7 @@ export default function GameCanvas() {
             stiffness={0.05}       // lower = snappier, higher = softer follow
           />
           <OrbitControls />
-            <RigidBody type = "fixed" name = "floor" colliders = "cuboid" friction={2}>
+            <RigidBody type = "fixed" name = "floor" colliders = "cuboid" friction={1}>
                 <Box args = {[100,1,100]} castShadow receiveShadow>
                   <meshStandardMaterial color="springgreen" />
                 </Box>

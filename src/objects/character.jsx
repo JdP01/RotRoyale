@@ -63,8 +63,7 @@ export const Cube = forwardRef((_,bodyRef) =>{
                 isOnFloor.current = false;
             }
         }}
-
-        type = "dynamic" 
+        type = "dynamic"
         colliders = "cuboid" 
         interpolation
         >
