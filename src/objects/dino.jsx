@@ -1,27 +1,53 @@
-import React, {useState, useRef, useMemo, forwardRef} from 'react';
+import React, {useState, useRef, useMemo, forwardRef, useEffect} from 'react';
 import {Box, useKeyboardControls, useGLTF} from '@react-three/drei'; 
 import {RapierRigidBody, RigidBody, useRapier, useSphericalJoint} from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { Controls } from "./GameCanvas"
 
-function NeckJoint ({bodyA, bodyB}) {
+function BodyJoint ({bodyA, bodyB}) {
 
     const joint = useSphericalJoint(bodyA, bodyB, [
-       [0,0,0], 
+       [1,1,1], //joint location in bodyA 
        [0,0,0]
     ]);
     return null;
     };
+
+function getObjectDimensions(objectRef) {
+    const obj = objectRef.current
+    if (!obj) {
+        return { min: [0, 0, 0], max: [0, 0, 0] }
+    }
+    
+    // Make sure world matrices are up to date
+    obj.updateMatrixWorld(true)
+    
+    // Compute Box3
+    const box = new THREE.Box3().setFromObject(obj)
+    
+    // Pull out into plain arrays
+    const { x: minX, y: minY, z: minZ } = box.min
+    const { x: maxX, y: maxY, z: maxZ } = box.max
+    
+    return {
+        min: [minX, minY, minZ],
+        max: [maxX, maxY, maxZ],
+    }
+    }
+
 
 export const Dino = ({ref: bodyRef}) =>{ 
 
     const { scene: Body } = useGLTF('/dino_parts1/body.glb'); // path to your GLTF
     const { scene: Head } = useGLTF('/dino_parts1/head.glb');
     const headRef = useRef();
+    const headMeshRef = useRef(); 
+
     //const { scene: LeftArm } = useGLTF('/dino_parts1/arm_left.glb');
     //const { scene: LeftLeg } = useGLTF('/dino_parts1/bodyleft_leg.glb');
 
+    //Start movement controls 
     const [hover, setHover] = useState(false);
     const jump = () =>{
         bodyRef.current.applyImpulse({x: 0, y:10, z: 0});
@@ -34,7 +60,7 @@ export const Dino = ({ref: bodyRef}) =>{
     const leftPressed = useKeyboardControls((state) => state[Controls.left]);
     const rightPressed = useKeyboardControls((state) => state[Controls.right]);
     const dir = new THREE.Vector3();
-
+    
     const handleMovement = () => { 
         if(!isOnFloor.current){ 
             return;
@@ -49,18 +75,27 @@ export const Dino = ({ref: bodyRef}) =>{
         bodyRef.current.setLinvel({x:dir.x,y:vel.y,z: dir.z},true);
 
     }
+    //End movement controls
 
+
+    //call getObjectDirections here 
+
+    //Game Frame Loop 
     useFrame((_,delta) => { 
         if (!bodyRef.current) return;
-
         handleMovement() ; 
         if(jumpPressed && isOnFloor.current) { 
             jump();
             isOnFloor.current = true; 
-        }            
+        }         
+     
+        const {min,max} = getObjectDimensions(headMeshRef);
+        console.log('Body XYZ min',min,'max' , max)  
+            
     });
 
     const isOnFloor = useRef(true);
+
     return( 
         <>
         <RigidBody ref = {bodyRef} 
@@ -88,9 +123,9 @@ export const Dino = ({ref: bodyRef}) =>{
         interpolate = {true}
         ref = {headRef}
         >
-            <primitive object = {Head}/>
+            <primitive object = {Head} ref = {headMeshRef}/>
         </RigidBody>
-        <NeckJoint bodyA = {headRef} bodyB = {bodyRef}/>
+        <BodyJoint bodyA = {headRef} bodyB = {bodyRef}/>
         </>
 
     );
