@@ -1,14 +1,28 @@
 import React, {useState, useRef, useMemo, forwardRef} from 'react';
 import {Box, useKeyboardControls, useGLTF} from '@react-three/drei'; 
-import {RigidBody } from '@react-three/rapier';
+import {RapierRigidBody, RigidBody, useRapier, useSphericalJoint} from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { Controls } from "./GameCanvas"
 
+function NeckJoint ({bodyA, bodyB}) {
 
-export const Cube = forwardRef((_,bodyRef) =>{ 
+    const joint = useSphericalJoint(bodyA, bodyB, [
+       [0,0,0], 
+       [0,0,0]
+    ]);
+    return null;
+    };
+
+export const Dino = ({ref: bodyRef}) =>{ 
+
+    const { scene: Body } = useGLTF('/dino_parts1/body.glb'); // path to your GLTF
+    const { scene: Head } = useGLTF('/dino_parts1/head.glb');
+    const headRef = useRef();
+    //const { scene: LeftArm } = useGLTF('/dino_parts1/arm_left.glb');
+    //const { scene: LeftLeg } = useGLTF('/dino_parts1/bodyleft_leg.glb');
+
     const [hover, setHover] = useState(false);
-    //const cube = useRef(); 
     const jump = () =>{
         bodyRef.current.applyImpulse({x: 0, y:10, z: 0});
 
@@ -32,12 +46,13 @@ export const Cube = forwardRef((_,bodyRef) =>{
         if (rightPressed)    dir.x += 10;
         const vel = bodyRef.current.linvel(); // { x, y, z }
 
-
         bodyRef.current.setLinvel({x:dir.x,y:vel.y,z: dir.z},true);
 
     }
 
     useFrame((_,delta) => { 
+        if (!bodyRef.current) return;
+
         handleMovement() ; 
         if(jumpPressed && isOnFloor.current) { 
             jump();
@@ -49,33 +64,34 @@ export const Cube = forwardRef((_,bodyRef) =>{
     return( 
         <>
         <RigidBody ref = {bodyRef} 
+        
         position ={[2,5,0]} 
         onCollisionEnter={({other}) => { 
-            if (other.rigidBodyObject.name === "floor"){ 
-                isOnFloor.current = true;
-            }
+            if (other.rigidBodyObject.name === "floor"){isOnFloor.current = true;}
         }}
         onCollisionExit={({other}) => { 
-            if (other.rigidBodyObject.name === "floor"){ 
-                isOnFloor.current = false;
-            }
+            if (other.rigidBodyObject.name === "floor"){isOnFloor.current = false;}
         }}
         type = "dynamic"
-        colliders = "cuboid" 
+        colliders = "hull" 
         interpolate = {true}
-        
         >
-            <Box  args = {[2,1,2]}
-            onPointerEnter={() => setHover(true)} 
-            onPointerLeave = {() => setHover(false)}
-            castShadow
-            receiveShadow
-            >
+            <primitive object = {Body} />
 
-                <meshStandardMaterial attach={"material"} color={hover? "red":"pink"} />
-            </Box>
-            </RigidBody>
+            {/*<meshStandardMaterial attach={"material"} color={hover? "red":"pink"} />*/}
+        </RigidBody>
+        <RigidBody
+        
+        position = {[2,6,0]}
+        type = "dynamic"
+        colliders = "hull"
+        interpolate = {true}
+        ref = {headRef}
+        >
+            <primitive object = {Head}/>
+        </RigidBody>
+        <NeckJoint bodyA = {headRef} bodyB = {bodyRef}/>
         </>
 
     );
-});
+};

@@ -18,7 +18,7 @@ export function CameraRig({ targetRef, offset = [10, 2, 10], stiffness = 0.1 }) 
 
             desiredPos.copy(posCopy).add(vecOffset);
 
-            camera.position.lerp(desiredPos, stiffness)
+            camera.position.lerp(desiredPos, stiffness = 0.1)
             //console.log('Cam is at', camera.position.x, camera.position.y, camera.position.z); //for testing 
             // 4) look at the cube
             camera.lookAt(posCopy)    
