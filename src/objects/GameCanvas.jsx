@@ -48,7 +48,7 @@ export default function GameCanvas() {
             offset={[10, 5, 10]}    // 2 units up, 8 units behind 
             stiffness={0.05}       // lower = snappier, higher = softer follow
           />*/}
-            <RigidBody interpolate = {true} type = "fixed" name = "floor" colliders = "cuboid" restitution ={0.2} friction={1} >
+            <RigidBody interpolate = {true} type = "fixed" name = "floor" colliders = "cuboid" restitution={0} friction={2} >
                 <Box args = {[100,1,100]} 
                 castShadow receiveShadow>
                   <meshStandardMaterial color="springgreen" />

@@ -1,0 +1,205 @@
+/* src/LoginPage.css */
+.login-page-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden; /* Important to contain positioned children */
+    position: relative; /* Crucial for positioning the overlay */
+    background-color: #333; /* Fallback color if image doesn't load */
+  }
+
+  .login-form-overlay-section {
+    position: absolute; /* Position over the background */
+    left: 30%;
+    top: 10%;
+    width: 45%; /* Or a fixed width like 500px, or use vw for responsiveness */
+    max-width: 550px; /* Max width for the form area */
+    min-width: 320px; /* Min width for smaller screens */
+    height: 100%;    /* Keep this if you want the content centered in a tall area */
+    /* If you want the overlay section itself to be less tall and determined by content: */
+    /* height: auto; */
+    /* max-height: 70vh; /* Example max height */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the form content horizontally */
+    justify-content: center; /* Center the form content vertically */
+    padding: 10px; /* Reduced padding for the overlay section itself */
+    box-sizing: border-box;
+  }
+
+  .login-form-content {
+    background-color: rgba(88, 90, 92, 0.805);
+    padding: 15px 30px; /* Was 30px 40px */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12); /* Slightly adjusted shadow */
+    width: 100%;
+    max-width: 300px; /* This already keeps the form content itself narrow */
+    text-align: center;
+  }
+
+  .login-form-content h1 {
+    margin-bottom: 15px; /* Was 25px */
+    font-size: 24px;     /* Was 28px */
+    color: #ffffff;
+  }
+
+  .input-group {
+    margin-bottom: 10px; /* Was 20px */
+    text-align: left;
+  }
+
+  .input-group label {
+    display:block;
+    margin-bottom: 4px; /* Was 8px */
+    font-weight: bold;
+    color: #ffffff;
+    font-size: 0.9em; /* Slightly smaller label */
+  }
+
+  .input-group input {
+    width: 100%;
+    padding: 8px 10px; /* Was 12px */
+    border: 1px solid #b8b8b8;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 15px; /* Was 16px */
+    color: #2c3e50;
+  }
+
+  .input-group input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+
+  .login-button {
+    width: 100%;
+    padding: 10px; /* Was 12px */
+    background: #186bdf;
+    color: rgb(0, 0, 0);
+    border: none;
+    border-radius: 4px;
+    font-size: 15px; /* Was 16px */
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+  }
+
+  .login-button:hover {
+    opacity: 0.9;
+  }
+
+  .social-login-divider {
+    margin: 15px 0; /* Was 25px 0 */
+    text-align: center;
+    color: #000000;
+    display: flex;
+    align-items: center;
+  }
+
+  .social-login-divider::before,
+  .social-login-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #000000;
+  }
+
+  .social-login-divider:not(:empty)::before {
+    margin-right: .5em;
+  }
+
+  .social-login-divider:not(:empty)::after {
+    margin-left: .5em;
+  }
+
+
+  .social-login-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px; /* Was 10px */
+    margin-top: 0px;
+  }
+
+  .social-button {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px 12px; /* Was 10px 15px */
+    border: none;
+    border-radius: 4px;
+    font-size: 14px; /* Was 16px */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* Was 10px */
+    color: rgb(0, 0, 0);
+    transition: background-color 1s ease;
+  }
+
+  .google-button {
+    background: linear-gradient(90deg, #0400fd, #009b17,#ffc400,#ec0000);
+  }
+  .google-button:hover {
+    /* background-color with linear-gradient won't work for hover, use opacity or other effects */
+    opacity: 0.85;
+  }
+
+  .facebook-button {
+    background: linear-gradient(90deg, #dbc834, #eb7702,#ff0000);
+  }
+  .facebook-button:hover {
+    opacity: 0.85;
+  }
+
+  .icon-placeholder {
+    display: inline-block;
+  }
+
+  /* Responsive adjustments (optional but good) */
+  @media (max-width: 768px) {
+    .login-form-overlay-section {
+      width: 80%;
+      max-width: none;
+      left: 50%;
+      top: 50%; /* Center vertically as well on smaller screens */
+      transform: translate(-50%, -50%); /* Center the form section itself */
+      height: auto; /* Adjust height to content on smaller screens */
+      padding: 15px; /* Adjust padding for overlay */
+    }
+    .login-form-content {
+      padding: 15px 20px; /* Further reduce padding */
+      max-width: 90%;
+    }
+     .login-form-content h1 {
+      font-size: 20px; /* Smaller title on mobile */
+      margin-bottom: 10px;
+    }
+    .input-group {
+      margin-bottom: 8px;
+    }
+    .input-group input, .login-button, .social-button {
+      font-size: 14px;
+      padding: 8px;
+    }
+    .social-login-divider {
+      margin: 10px 0;
+    }
+    .social-button {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .login-form-overlay-section {
+      width: 90%;
+      padding: 10px;
+    }
+     .login-form-content h1 {
+      font-size: 18px;
+    }
+    .input-group input, .login-button, .social-button {
+      font-size: 13px;
+      padding: 6px 8px;
+    }
+  }

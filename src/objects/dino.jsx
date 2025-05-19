@@ -5,11 +5,14 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { Controls } from "./GameCanvas"
 
-function BodyJoint ({bodyA, bodyB}) {
+function BodyJoint ({bodyA, bodyB, locationA, locationB}) {
 
+    if(!locationA || !locationB) return null;
     const joint = useSphericalJoint(bodyA, bodyB, [
-       [1,1,1], //joint location in bodyA 
-       [0,0,0]
+    
+        //XYZ joint location matrices for both object components
+        locationA,  
+        locationB 
     ]);
     return null;
     };
@@ -31,11 +34,42 @@ function getObjectDimensions(objectRef) {
     const { x: maxX, y: maxY, z: maxZ } = box.max
     
     return {
-        min: [minX, minY, minZ],
-        max: [maxX, maxY, maxZ],
+        min: [minX,minY,minZ],
+        max: [maxX,maxY,maxZ],
+        size: [minX - maxX, minY - maxY, minZ - maxZ]
     }
+}
+function jointCreator(objRefA, objRefB,jointType) { 
+    //get object dimensions for both parts 
+    const {minA,maxA,sizeA} = getObjectDimensions(objRefA); 
+    const {minB,maxB,sizeB} = getObjectDimensions(objRefB); 
+
+    switch(jointType){ 
+        case 'neck': 
+            return BodyJoint(objRefA,objRefB,minA,minB);
+            break;
+        case 'leftArm': 
+            //blah blah 
+            break;
+        case 'rightArm': 
+            //blah blah
+            break;
+        case 'leftLeg': 
+            //blah blah 
+            break;
+        case 'rightLeg': 
+            //blah blah 
+            break;
+        case 'tail': 
+            //blahblah
+            break;
+        default: 
+            console.log('invalid body joint type');
+            break; 
     }
 
+
+}
 
 export const Dino = ({ref: bodyRef}) =>{ 
 
@@ -89,8 +123,6 @@ export const Dino = ({ref: bodyRef}) =>{
             isOnFloor.current = true; 
         }         
      
-        const {min,max} = getObjectDimensions(headMeshRef);
-        console.log('Body XYZ min',min,'max' , max)  
             
     });
 
@@ -125,7 +157,7 @@ export const Dino = ({ref: bodyRef}) =>{
         >
             <primitive object = {Head} ref = {headMeshRef}/>
         </RigidBody>
-        <BodyJoint bodyA = {headRef} bodyB = {bodyRef}/>
+        {/*<jointCreator objRefA = {headMeshRef} objRefB = {bodyRef} jointType = {'neck'}/>*/}
         </>
 
     );
