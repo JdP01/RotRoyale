@@ -20,7 +20,7 @@ function LoginPage({ onLoginSuccess }) {
 
   const handleUsernamePasswordLogin = (event) => {
     event.preventDefault();
-    if (username === "Juan" && password === "WAP") {
+    if (username === "Juan" && password === "yes") {
       onLoginSuccess();
     } else {
       alert('Invalid credentials for username/password');
