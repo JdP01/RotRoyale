@@ -137,7 +137,7 @@
   }
 
   .google-button {
-    background: linear-gradient(90deg, #0400fd, #009b17,#ffc400,#ec0000);
+    background: #ffffff ;/*linear-gradient(90deg, #0400fd, #009b17,#ffc400,#ec0000);*/
   }
   .google-button:hover {
     /* background-color with linear-gradient won't work for hover, use opacity or other effects */
@@ -145,7 +145,7 @@
   }
 
   .facebook-button {
-    background: linear-gradient(90deg, #dbc834, #eb7702,#ff0000);
+    background: #3e4b84 ;/*linear-gradient(90deg, #dbc834, #eb7702,#ff0000);*/
   }
   .facebook-button:hover {
     opacity: 0.85;

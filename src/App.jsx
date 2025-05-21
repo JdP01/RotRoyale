@@ -14,8 +14,7 @@ export default function App() {
 
   // If not logged in, show the LoginPage
   if (!isLoggedIn) {
-    return <LoginPage onLoginSuccess={handleLogin} />;
-  }
+    return <LoginPage onLoginSuccess={handleLogin} />;}
 
   return (
     <GameCanvas/>

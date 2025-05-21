@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { Controls } from "./GameCanvas"
 
 
-export const Cube = forwardRef((_,bodyRef) =>{ 
+export const Dino = forwardRef((_,bodyRef) =>{ 
     const [hover, setHover] = useState(false);
     //const cube = useRef(); 
     const jump = () =>{

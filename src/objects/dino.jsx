@@ -96,9 +96,8 @@ export const Dino = ({ref: bodyRef}) =>{
     const dir = new THREE.Vector3();
     
     const handleMovement = () => { 
-        if(!isOnFloor.current){ 
-            return;
-        }
+       // if(!isOnFloor.current){ 
+          //  return;}
         dir.set(0,0,0)
         if (forwardPressed)  dir.z -= 10;
         if (backPressed)     dir.z += 10;

@@ -2,7 +2,7 @@ import React, { Suspense,useMemo,useState, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import {Box, KeyboardControls, OrbitControls} from '@react-three/drei'; 
 import { Physics, RigidBody} from '@react-three/rapier';
-import {Dino} from './dino';
+import {Dino} from './character';
 import * as THREE from "three";
 import { CameraRig } from './CameraRig'; // ← new
 
@@ -43,11 +43,11 @@ export default function GameCanvas() {
 
           <Dino ref ={dinoRef} />
 
-          {/*<CameraRig 
+          <CameraRig 
             targetRef={dinoRef} 
             offset={[10, 5, 10]}    // 2 units up, 8 units behind 
             stiffness={0.05}       // lower = snappier, higher = softer follow
-          />*/}
+          />
             <RigidBody interpolate = {true} type = "fixed" name = "floor" colliders = "cuboid" restitution={0} friction={2} >
                 <Box args = {[100,1,100]} 
                 castShadow receiveShadow>

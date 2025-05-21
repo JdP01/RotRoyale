@@ -1,10 +1,11 @@
 // src/LoginPage.jsx
 import React, { useState } from 'react';
 import './LoginPage.css'; // We'll heavily rely on this CSS file now
+const googleImage = "/images/google.svg"
 
 // Placeholder for actual social login icons
-const GoogleIcon = () => <span className="icon-placeholder">G</span>;
-const FacebookIcon = () => <span className="icon-placeholder">f</span>;
+const GoogleIcon = () =>   <img src={googleImage} alt="Google sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
+const FacebookIcon = () => <img src={googleImage} alt="Google sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
 
 function LoginPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -16,8 +17,8 @@ function LoginPage({ onLoginSuccess }) {
   // 1. Import it if it's in src/assets:
   // import backgroundImage from './assets/your-background-image.jpg';
   // 2. Or ensure imagePath is a valid URL if it's from public folder or external.
-  const imagePath = "/DinoConceptArt/Title.png"; // Example, replace or import
-
+  const imagePath = "/images/DinoConceptArt/Title.png"; // Example, replace or import
+  const googleImage = "/images/google.png"
   const handleUsernamePasswordLogin = (event) => {
     event.preventDefault();
     if (username === "Juan" && password === "yes") {
