@@ -41,7 +41,7 @@ export default function GameCanvas() {
           <Physics gravity={[0,-9.81,0]} debug timeStep={1/300} >
           <OrbitControls />
 
-          <Dino ref ={dinoRef} />
+          <Dino ref ={dinoRef} position/>
 
           <CameraRig 
             targetRef={dinoRef} 

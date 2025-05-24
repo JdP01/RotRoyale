@@ -1,6 +1,6 @@
 import React, {useState, useRef, useMemo, forwardRef, useEffect} from 'react';
 import {Box, useKeyboardControls, useGLTF} from '@react-three/drei'; 
-import {RapierRigidBody, RigidBody, useRapier, useSphericalJoint} from '@react-three/rapier';
+import {RapierRigidBody, RigidBody} from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { Controls } from "./GameCanvas"
@@ -39,14 +39,20 @@ function getObjectDimensions(objectRef) {
 }
 
 export const Dino = ({ref: bodyRef}) =>{ 
-
+        const ref = useRef();
+        const legLeftRef = useRef();
+        const legRightRef = useRef();
+        const headRef = useRef();
+        const tailRef = useRef();
+        const armLeftRef = useRef();
+        const armRightRef = useRef();
+        
     const { scene: Body } = useGLTF('/dino_parts1/body.glb'); // path to your GLTF
     const { scene: Head } = useGLTF('/dino_parts1/head.glb');
-    const headRef = useRef();
-    const headMeshRef = useRef(); 
-
-    //const { scene: LeftArm } = useGLTF('/dino_parts1/arm_left.glb');
-    //const { scene: LeftLeg } = useGLTF('/dino_parts1/bodyleft_leg.glb');
+    const {scene: LeftLeg} = useGLTF('/dino_parts1/left_leg.glb'); 
+    const {scene: armLeft} = useGLTF('/dino_parts1/arm_left.glb')
+    const {scene: tail} = useGLTF('/dino_parts1/tail.glb')
+    const {scene: weapon} = useGLTF('/objects/glock_game.glb')
 
     //Start movement controls 
     const [hover, setHover] = useState(false);
@@ -63,8 +69,7 @@ export const Dino = ({ref: bodyRef}) =>{
     const dir = new THREE.Vector3();
     
     const handleMovement = () => { 
-       // if(!isOnFloor.current){ 
-          //  return;}
+
         dir.set(0,0,0)
         if (forwardPressed)  dir.z -= 10;
         if (backPressed)     dir.z += 10;
@@ -96,7 +101,7 @@ export const Dino = ({ref: bodyRef}) =>{
 
     return( 
         <>
-        <RigidBody ref = {bodyRef} 
+        <RigidBody ref = {bodyRef}
         
         position ={[2,5,0]} 
         onCollisionEnter={({other}) => { 
@@ -109,22 +114,37 @@ export const Dino = ({ref: bodyRef}) =>{
         colliders = "hull" 
         interpolate = {true}
         >
-            <primitive object = {Body} />
+        <group ref={bodyRef}>
+          <primitive object={Body} position={[0, 0, 0]} />
 
-            {/*<meshStandardMaterial attach={"material"} color={hover? "red":"pink"} />*/}
+          <group ref={headRef} position={[0, 2.2, 1.3]}>
+            <primitive object={Head} />
+          </group>
+  
+          <group ref={legLeftRef} position={[1, 1, 1]}>
+            <primitive object={LeftLeg} position={[0,-1.3,-0.2]} />
+          </group>
+  
+          <group ref={legRightRef} position={[-1, 1, 1]}>
+            <primitive object={LeftLeg.clone()} scale={[-1, 1, 1]} position={[0,-1.3,-0.2]}/>
+          </group>
+  
+          <group ref={armLeftRef} position={[-1.25, 1.3, 1.3]}>
+            <primitive object={armLeft} />
+            <primitive object={weapon} rotation={[0,-1.5,0]} scale={[0.15,0.15,0.15]} position={[-0.2,0.5,1]}/>
+          </group>
+  
+          <group ref={armRightRef} position={[1.25, 1.3, 1.3]}>
+            <primitive object={armLeft.clone()} scale={[-1, 1, 1]} />
+            <primitive object={weapon.clone()} rotation={[0,-1.5,0]} scale={[0.15,0.15,0.15]} position={[0.2,0.5,1]}/>
+          </group>
+  
+          <group ref={tailRef} position={[0, 0, 0]}>
+            <primitive object={tail}/>
+          </group>
+        </group>
         </RigidBody>
-        <RigidBody
-        
-        position = {[2,6,0]}
-        type = "dynamic"
-        colliders = "hull"
-        interpolate = {true}
-        ref = {headRef}
-        >
-            <primitive object = {Head} ref = {headMeshRef}/>
-        </RigidBody>
-        {/*<jointCreator objRefA = {headMeshRef} objRefB = {bodyRef} jointType = {'neck'}/>*/}
         </>
-
+        
     );
 };
