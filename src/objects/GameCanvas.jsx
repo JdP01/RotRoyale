@@ -2,7 +2,7 @@ import React, { Suspense,useMemo,useState, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import {Box, KeyboardControls, OrbitControls} from '@react-three/drei'; 
 import { Physics, RigidBody} from '@react-three/rapier';
-import {Dino} from './character';
+import {Dino} from './dino';
 import * as THREE from "three";
 import { CameraRig } from './CameraRig'; // ← new
 

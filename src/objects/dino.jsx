@@ -5,18 +5,6 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { Controls } from "./GameCanvas"
 
-function BodyJoint ({bodyA, bodyB, locationA, locationB}) {
-
-    if(!locationA || !locationB) return null;
-    const joint = useSphericalJoint(bodyA, bodyB, [
-    
-        //XYZ joint location matrices for both object components
-        locationA,  
-        locationB 
-    ]);
-    return null;
-    };
-
 function getObjectDimensions(objectRef) {
     const obj = objectRef.current
     if (!obj) {
@@ -32,43 +20,22 @@ function getObjectDimensions(objectRef) {
     // Pull out into plain arrays
     const { x: minX, y: minY, z: minZ } = box.min
     const { x: maxX, y: maxY, z: maxZ } = box.max
-    
+
+     const sizeX = maxX - minX;
+    const sizeY = maxY - minY;
+    const sizeZ = maxZ - minZ;
+
+    // --- ADD THIS ---
+    // Calculate the center point
+    const centerX = (maxX + minX) / 2;
+    const centerY = (maxY + minY) / 2;
+    const centerZ = (maxZ + minZ) / 2;
     return {
         min: [minX,minY,minZ],
         max: [maxX,maxY,maxZ],
-        size: [minX - maxX, minY - maxY, minZ - maxZ]
+        size: [sizeX,sizeY,sizeZ], 
+        center: [centerX, centerY, centerZ]
     }
-}
-function jointCreator(objRefA, objRefB,jointType) { 
-    //get object dimensions for both parts 
-    const {minA,maxA,sizeA} = getObjectDimensions(objRefA); 
-    const {minB,maxB,sizeB} = getObjectDimensions(objRefB); 
-
-    switch(jointType){ 
-        case 'neck': 
-            return BodyJoint(objRefA,objRefB,minA,minB);
-            break;
-        case 'leftArm': 
-            //blah blah 
-            break;
-        case 'rightArm': 
-            //blah blah
-            break;
-        case 'leftLeg': 
-            //blah blah 
-            break;
-        case 'rightLeg': 
-            //blah blah 
-            break;
-        case 'tail': 
-            //blahblah
-            break;
-        default: 
-            console.log('invalid body joint type');
-            break; 
-    }
-
-
 }
 
 export const Dino = ({ref: bodyRef}) =>{ 
