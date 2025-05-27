@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: nakama
+      POSTGRES_USER: nakama
+      POSTGRES_PASSWORD: localdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # Added port mapping for debugging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nakama -d nakama"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nakama:
+    image: heroiclabs/nakama:3.27.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    entrypoint:
+      - "/bin/sh"
+      - "-ecx"
+      - >
+        /nakama/nakama migrate up --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable &&
+        exec /nakama/nakama --config /nakama/data/local.yml --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable
+    volumes:
+      - ./nakama:/nakama/data
+    ports:
+      - "7350:7350"
+      - "7351:7351"
+
+volumes:
+  pgdata:

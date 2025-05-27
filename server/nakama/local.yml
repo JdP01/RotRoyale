@@ -1,0 +1,26 @@
+name: "nakama"
+
+logger:
+  level: "DEBUG"
+
+database:
+  connection: "postgres"
+  dsn: "postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable"
+
+console:
+  username: "admin"
+  password: "password"
+  http_bind_address: "0.0.0.0"
+  server_key: "testkey123"
+
+session:
+  encryption_key: "averyrandomlongstringvalue1"
+  refresh_encryption_key: "anotherrandomlongstringvalue2"
+
+socket:
+  #server_key: "testkey123"
+  bind_address: "0.0.0.0"
+
+runtime:
+  http_key: "defaulthttpkey"
+  http_bind_address: "0.0.0.0"

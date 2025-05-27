@@ -1,4 +1,3 @@
-
 import React, {useState, useRef, useMemo, forwardRef, useEffect} from 'react';
 import {Box, useKeyboardControls, useGLTF} from '@react-three/drei'; 
 import {RapierRigidBody, RigidBody} from '@react-three/rapier';
