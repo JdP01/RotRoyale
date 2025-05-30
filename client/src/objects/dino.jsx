@@ -71,8 +71,8 @@ export const Dino = ({ref: bodyRef}) =>{
     const handleMovement = () => { 
 
         dir.set(0,0,0)
-          const pos = bodyRef.current.translation(); // Get current position
-          const newPos = { x: pos.x, y: pos.y, z: pos.z };
+          /*const pos = bodyRef.current.translation(); // Get current position
+          const newPos = { x: pos.x, y: pos.y, z: pos.z };*/ //used for kinematicPosition Movement
 
         if(!isOnFloor.current){ 
           newPos.y -= 0.1;
@@ -80,12 +80,14 @@ export const Dino = ({ref: bodyRef}) =>{
         else{ 
           //newPos.y = 0;
         }
-        if (forwardPressed)  newPos.z -= 1;
-        if (backPressed)     newPos.z += 1;
-        if (leftPressed)     newPos.x -= 1;
-        if (rightPressed)    newPos.x += 1;
+        if (forwardPressed)  dir.z -= 10;
+        if (backPressed)     dir.z += 10;
+        if (leftPressed)     dir.x -= 10;
+        if (rightPressed)    dir.x += 10;
+        const vel = bodyRef.current.linvel(); // { x, y, z }
 
-        bodyRef.current.setNextKinematicTranslation(newPos);
+        //bodyRef.current.setNextKinematicTranslation(newPos); //used for kinematicPosition Movement 
+        bodyRef.current.setLinvel({x:dir.x,y:vel.y,z: dir.z},true);
 
 
     }
@@ -112,8 +114,8 @@ export const Dino = ({ref: bodyRef}) =>{
     return( 
         <>
         <RigidBody ref = {bodyRef}
-        
         position ={[2,5,0]} 
+
         onCollisionEnter={({other}) => { 
           console.log("colliding with", other.rigidBodyObject?.name);
             if (other.rigidBodyObject.name === "floor"){isOnFloor.current = true;}
@@ -121,9 +123,11 @@ export const Dino = ({ref: bodyRef}) =>{
         onCollisionExit={({other}) => { 
             if (other.rigidBodyObject.name === "floor"){isOnFloor.current = false;}
         }}
-        type = "kinematicPosition"
+
+        type = "dynamic"
         colliders = "hull" 
         interpolate = {true}
+        gravityScale={2}
         >
         <group ref={bodyRef}>
           <primitive object={Body} position={[0, 0, 0]} />
