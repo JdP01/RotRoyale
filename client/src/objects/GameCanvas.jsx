@@ -45,7 +45,7 @@ export default function GameCanvas() {
 
           <CameraRig 
             targetRef={dinoRef} 
-            offset={[10, 5, 10]}    // 2 units up, 8 units behind 
+            offset={[10, 5, 10]}   
             stiffness={0.05}       // lower = snappier, higher = softer follow
           />
             <RigidBody interpolate = {true} type = "fixed" name = "floor" colliders = "cuboid" restitution={0} friction={2} >

@@ -71,13 +71,22 @@ export const Dino = ({ref: bodyRef}) =>{
     const handleMovement = () => { 
 
         dir.set(0,0,0)
-        if (forwardPressed)  dir.z -= 10;
-        if (backPressed)     dir.z += 10;
-        if (leftPressed)     dir.x -= 10;
-        if (rightPressed)    dir.x += 10;
-        const vel = bodyRef.current.linvel(); // { x, y, z }
+          const pos = bodyRef.current.translation(); // Get current position
+          const newPos = { x: pos.x, y: pos.y, z: pos.z };
 
-        bodyRef.current.setLinvel({x:dir.x,y:vel.y,z: dir.z},true);
+        if(!isOnFloor.current){ 
+          newPos.y -= 0.1;
+        }
+        else{ 
+          //newPos.y = 0;
+        }
+        if (forwardPressed)  newPos.z -= 1;
+        if (backPressed)     newPos.z += 1;
+        if (leftPressed)     newPos.x -= 1;
+        if (rightPressed)    newPos.x += 1;
+
+        bodyRef.current.setNextKinematicTranslation(newPos);
+
 
     }
     //End movement controls
@@ -88,7 +97,8 @@ export const Dino = ({ref: bodyRef}) =>{
     //Game Frame Loop 
     useFrame((_,delta) => { 
         if (!bodyRef.current) return;
-        handleMovement() ; 
+        handleMovement(); 
+
         if(jumpPressed && isOnFloor.current) { 
             jump();
             isOnFloor.current = true; 
@@ -105,12 +115,13 @@ export const Dino = ({ref: bodyRef}) =>{
         
         position ={[2,5,0]} 
         onCollisionEnter={({other}) => { 
+          console.log("colliding with", other.rigidBodyObject?.name);
             if (other.rigidBodyObject.name === "floor"){isOnFloor.current = true;}
         }}
         onCollisionExit={({other}) => { 
             if (other.rigidBodyObject.name === "floor"){isOnFloor.current = false;}
         }}
-        type = "dynamic"
+        type = "kinematicPosition"
         colliders = "hull" 
         interpolate = {true}
         >

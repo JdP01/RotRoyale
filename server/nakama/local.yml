@@ -18,7 +18,7 @@ session:
   refresh_encryption_key: "anotherrandomlongstringvalue2"
 
 socket:
-  #server_key: "testkey123"
+  server_key: "testkey123"
   bind_address: "0.0.0.0"
 
 runtime:
