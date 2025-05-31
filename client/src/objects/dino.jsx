@@ -5,6 +5,39 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from "three";
 import { Controls } from "./GameCanvas"
 
+function getObjectDimensions(objectRef) {
+    const obj = objectRef.current
+    if (!obj) {
+        return { min: [0, 0, 0], max: [0, 0, 0] }
+    }
+    
+    // Make sure world matrices are up to date
+    obj.updateMatrixWorld(true)
+    
+    // Compute Box3
+    const box = new THREE.Box3().setFromObject(obj)
+    
+    // Pull out into plain arrays
+    const { x: minX, y: minY, z: minZ } = box.min
+    const { x: maxX, y: maxY, z: maxZ } = box.max
+
+     const sizeX = maxX - minX;
+    const sizeY = maxY - minY;
+    const sizeZ = maxZ - minZ;
+
+    // --- ADD THIS ---
+    // Calculate the center point
+    const centerX = (maxX + minX) / 2;
+    const centerY = (maxY + minY) / 2;
+    const centerZ = (maxZ + minZ) / 2;
+    return {
+        min: [minX,minY,minZ],
+        max: [maxX,maxY,maxZ],
+        size: [sizeX,sizeY,sizeZ], 
+        center: [centerX, centerY, centerZ]
+    }
+}
+
 export const Dino = ({ref: bodyRef, onRotationChange}) =>{ 
         const ref = useRef();
         const legLeftRef = useRef();
@@ -36,6 +69,7 @@ export const Dino = ({ref: bodyRef, onRotationChange}) =>{
     const bodyBobOffset = useRef(0);
 
     // Movement controls 
+    const [hover, setHover] = useState(false);
     const jump = () =>{
         bodyRef.current.applyImpulse({x: 0, y:200, z: 0});
         isOnFloor.current = false;
@@ -63,7 +97,7 @@ export const Dino = ({ref: bodyRef, onRotationChange}) =>{
 
     // Calculate target rotation based on mouse position
     useEffect(() => {
-        const angle = Math.atan2(mousePosition.x, mousePosition.y);
+        const angle = Math.atan2(mousePosition.x, -mousePosition.y); // Fixed: negative Y for correct forward direction
         setTargetRotation(angle);
         
         // Head rotation with limited range (±60 degrees)
@@ -85,8 +119,8 @@ export const Dino = ({ref: bodyRef, onRotationChange}) =>{
         
         if (moving) {
             // Use current body rotation as forward direction
-            const forward = new THREE.Vector3(0, 0, -1);
-            const right = new THREE.Vector3(1, 0, 0);
+            const forward = new THREE.Vector3(0, 0, -1); // Forward is negative Z
+            const right = new THREE.Vector3(1, 0, 0);    // Right is positive X
             
             // Rotate directions based on current body rotation
             forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), currentBodyRotation);
@@ -213,7 +247,7 @@ export const Dino = ({ref: bodyRef, onRotationChange}) =>{
         onCollisionExit={({other}) => { 
             if (other.rigidBodyObject.name === "floor"){isOnFloor.current = false;}
         }}
-        enabledRotations={[false, false, false]} // Only allow rotation around Y
+        enabledRotations={[false, true, false]} // Only allow rotation around Y
         type = "dynamic"
         colliders = "hull"
         interpolate = {true}

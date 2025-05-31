@@ -33,7 +33,7 @@ export function CameraRig({
         const characterPos = tempVec.set(pos.x, pos.y, pos.z);
         
         // Calculate ideal camera position behind the character
-        const behindOffset = tempVec2.set(0, 0, distance); // Camera distance behind
+        const behindOffset = tempVec2.set(0, 0, distance); // Camera distance behind (positive Z is behind)
         behindOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
         
         idealCameraPos.current.copy(characterPos)
@@ -44,7 +44,7 @@ export function CameraRig({
         idealLookAt.current.copy(characterPos)
             .setY(characterPos.y + heightOffset);
         
-        // Add a slight forward offset to the look-at point
+        // Add a slight forward offset to the look-at point (negative Z is forward)
         const forwardOffset = new THREE.Vector3(0, 0, -2);
         forwardOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
         idealLookAt.current.add(forwardOffset);

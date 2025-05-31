@@ -23,10 +23,10 @@ export default function GameCanvas() {
   const [dinoRotation, setDinoRotation] = useState(0);
 
   const map = useMemo(() =>[
-          { name: Controls.forward, keys: ["ArrowUp", "KeyW"]},
-          { name: Controls.back, keys: ["ArrowDown", "KeyS"]},
-          { name: Controls.left, keys: ["ArrowLeft", "KeyA"]},
-          { name: Controls.right, keys: ["ArrowRight", "KeyD"]},
+          { name: Controls.forward, keys: ["KeyW"]},
+          { name: Controls.back, keys: ["KeyS"]},
+          { name: Controls.left, keys: ["KeyA"]},
+          { name: Controls.right, keys: ["KeyD"]},
           { name: Controls.jump, keys: ["Space"]},
           { name: Controls.sprint, keys: ["Shift"]},
       ],
