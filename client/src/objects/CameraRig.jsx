@@ -1,28 +1,68 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-export function CameraRig({ targetRef, offset = [10, 2, 10], stiffness = 0.1 }) {
-
+export function CameraRig({ 
+    targetRef, 
+    characterRotation = 0, // Rotation passed from character
+    distance = 8, 
+    height = 4, 
+    heightOffset = 1, // How much higher to look than the character
+    stiffness = 0.08,
+    lookStiffness = 0.12 
+}) {
     const { camera } = useThree()
-    // turn offset array into a Vector3 once
-    const vecOffset = useMemo(() => new THREE.Vector3(...offset), [offset])
-    const posCopy = new THREE.Vector3(); 
-    const desiredPos = posCopy.clone()
+    
+    // Camera state refs
+    const currentCameraPos = useRef(new THREE.Vector3())
+    const currentLookAt = useRef(new THREE.Vector3())
+    const idealCameraPos = useRef(new THREE.Vector3())
+    const idealLookAt = useRef(new THREE.Vector3())
+    
+    // Temporary vectors for calculations
+    const tempVec = useMemo(() => new THREE.Vector3(), [])
+    const tempVec2 = useMemo(() => new THREE.Vector3(), [])
+
     useFrame(() => {
-        if (targetRef.current) {
+        if (!targetRef || !targetRef.current) return;
 
-            const pos = targetRef.current.translation();
-            //console.log('Cube is at', pos.x, pos.y, pos.z); // for testing 
-            posCopy.set(pos.x,pos.y,pos.z);
-
-            desiredPos.copy(posCopy).add(vecOffset);
-
-            camera.position.lerp(desiredPos, stiffness = 0.1)
-            //console.log('Cam is at', camera.position.x, camera.position.y, camera.position.z); //for testing 
-            // 4) look at the cube
-            camera.lookAt(posCopy)    
+        // Get character position
+        const pos = targetRef.current.translation();
+        if (!pos) return; // Safety check for translation
+        
+        const characterPos = tempVec.set(pos.x, pos.y, pos.z);
+        
+        // Calculate ideal camera position behind the character
+        const behindOffset = tempVec2.set(0, 0, distance); // Camera distance behind
+        behindOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
+        
+        idealCameraPos.current.copy(characterPos)
+            .add(behindOffset)
+            .setY(characterPos.y + height);
+        
+        // Calculate ideal look-at position (slightly ahead and above the character)
+        idealLookAt.current.copy(characterPos)
+            .setY(characterPos.y + heightOffset);
+        
+        // Add a slight forward offset to the look-at point
+        const forwardOffset = new THREE.Vector3(0, 0, -2);
+        forwardOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
+        idealLookAt.current.add(forwardOffset);
+        
+        // Initialize camera position on first frame
+        if (currentCameraPos.current.length() === 0) {
+            currentCameraPos.current.copy(idealCameraPos.current);
+            currentLookAt.current.copy(idealLookAt.current);
         }
-  });
-  return null;
+        
+        // Smooth camera position interpolation
+        currentCameraPos.current.lerp(idealCameraPos.current, stiffness);
+        currentLookAt.current.lerp(idealLookAt.current, lookStiffness);
+        
+        // Apply to camera
+        camera.position.copy(currentCameraPos.current);
+        camera.lookAt(currentLookAt.current);
+    });
+
+    return null;
 }
