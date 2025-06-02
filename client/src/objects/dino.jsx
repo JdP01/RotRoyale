@@ -1,10 +1,10 @@
 import React, {useState, useRef} from 'react';
-import {useKeyboardControls, useGLTF} from '@react-three/drei'; 
+import {useGLTF} from '@react-three/drei'; 
 import {RigidBody} from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
-import { Controls } from "./GameCanvas"
 import { useDinoAnimations } from "./dinoAnimations";
+import { useDinoControls } from "./dinoControls";
 
 export const Dino = ({ref: bodyRef, onRotationChange}) => { 
     // Refs for body parts
@@ -23,10 +23,6 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
     const { scene: armLeft } = useGLTF('/dino_parts1/arm_left.glb')
     const { scene: tail } = useGLTF('/dino_parts1/tail.glb')
     const { scene: weapon } = useGLTF('/objects/glock_game.glb')
-
-    // Character rotation
-    const [currentBodyRotation, setCurrentBodyRotation] = useState(0);
-    const [targetRotation, setTargetRotation] = useState(0);
     
     // Animation states
     const [isMoving, setIsMoving] = useState(false);
@@ -36,95 +32,16 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
     // Animation hook
     const { updateAdvancedAnimations } = useDinoAnimations();
 
-    // Movement controls 
-    const jump = () => {
-        bodyRef.current.applyImpulse({x: 0, y: 7, z: 0});
-        isOnFloor.current = false;
-        setIsJumping(true);
-        // Reset jumping state after a delay
-        //setTimeout(() => setIsJumping(false), 800);
-    }
-    
-    const jumpPressed = useKeyboardControls((state) => state[Controls.jump]);
-    const forwardPressed = useKeyboardControls((state) => state[Controls.forward]);
-    const backPressed = useKeyboardControls((state) => state[Controls.back]);
-    const leftPressed = useKeyboardControls((state) => state[Controls.left]);
-    const rightPressed = useKeyboardControls((state) => state[Controls.right]);
-    const sprintPressed = useKeyboardControls((state) => state[Controls.sprint]);
-    
-    const dir = new THREE.Vector3();
-    
-    const handleMovement = (delta) => { 
-        dir.set(0, 0, 0);
-        let moving = false;
-        let newTargetRotation = currentBodyRotation;
-        
-        // Check movement inputs and set target rotation
-        if (forwardPressed) {
-            dir.z = 1;
-            newTargetRotation = Math.PI; // Face forward
-            moving = true;
-        }
-        if (backPressed) {
-            dir.z = -1;
-            newTargetRotation = 0; // Face backward (toward camera)
-            moving = true;
-        }
-        if (leftPressed) {
-            dir.x = 1;
-            newTargetRotation = -Math.PI / 2; // Face left
-            moving = true;
-        }
-        if (rightPressed) {
-            dir.x = -1;
-            newTargetRotation = Math.PI / 2; // Face right
-            moving = true;
-        }
-        if (jumpPressed && isOnFloor.current) { 
-            jump();
-            isOnFloor.current = true; 
-        }
-        
-        // Handle diagonal movement - character faces the primary direction
-        if (forwardPressed && leftPressed) newTargetRotation = -3 * Math.PI / 4; // Northeast
-        if (forwardPressed && rightPressed) newTargetRotation =3 * Math.PI / 4; // Northwest
-        if (backPressed && leftPressed) newTargetRotation = -Math.PI / 4; // Southeast
-        if (backPressed && rightPressed) newTargetRotation = Math.PI / 4; // Southwest
-        
-        setIsMoving(moving);
-        setIsSprinting(sprintPressed && moving);
-        
-        if (moving) {
-            setTargetRotation(newTargetRotation);
-            
-            // Smoothly rotate body towards target
-            const rotationSpeed = 8 * delta;
-            const angleDiff = newTargetRotation - currentBodyRotation;
-            const shortestAngle = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
-            
-            if (Math.abs(shortestAngle) > 0.05) {
-                const newRotation = currentBodyRotation + shortestAngle * rotationSpeed;
-                setCurrentBodyRotation(newRotation);
-            } 
-            else setCurrentBodyRotation(newTargetRotation);
-
-            // Normalize direction and apply speed
-            dir.normalize();
-            const moveSpeed = (sprintPressed && moving) ? 15 : 10;
-            dir.multiplyScalar(moveSpeed);
-        }
-
-        const vel = bodyRef.current.linvel();
-        bodyRef.current.setLinvel({x: dir.x, y: vel.y, z: dir.z}, true);
-    }
-
     const isOnFloor = useRef(true);
+    
+    // Get controller logic - now returns both camera and character rotations
+    const { handleMovement, cameraRotation, characterRotation } = useDinoControls(bodyRef, isOnFloor, setIsJumping);
 
     // Game Frame Loop 
     useFrame((_, delta) => { 
         if (!bodyRef.current) return;
         
-        handleMovement(delta); 
+        handleMovement(delta, setIsMoving, setIsSprinting);
         
         // Update animations and get body bob height
         const bodyBobHeight = updateAdvancedAnimations(delta, {
@@ -143,15 +60,16 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
         
         // Apply body rotation and vertical bobbing
         if (mainGroupRef.current && bodyRef.current) {
-
             mainGroupRef.current.position.y = bodyBobHeight;
             
+            // Use characterRotation for visual appearance
             const quaternion = new THREE.Quaternion();
-            quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), currentBodyRotation);
-            bodyRef.current.setRotation(quaternion,true);
-            // Notify parent component of rotation change for camera
+            quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), characterRotation);
+            bodyRef.current.setRotation(quaternion, true);
+            
+            // Notify parent component of CAMERA rotation change for camera positioning
             if (onRotationChange) {
-                onRotationChange(currentBodyRotation);
+                onRotationChange(cameraRotation);
             }
         }
     });

@@ -5,8 +5,8 @@ import * as THREE from 'three'
 export function CameraRig({
     targetRef,
     characterRotation = 0, // Rotation passed from character
-    distance = 8,          // How far behind the character
-    height = 4,            // How high above the character  
+    distance = 5,          // How far behind the character
+    height = 2,            // How high above the character  
     heightOffset = 1,      // How much higher to look than the character
     stiffness = 0.08,      // Camera movement smoothness
     lookStiffness = 0.12   // Look-at smoothness
@@ -18,9 +18,6 @@ export function CameraRig({
     const currentLookAt = useRef(new THREE.Vector3())
     const idealCameraPos = useRef(new THREE.Vector3())
     const idealLookAt = useRef(new THREE.Vector3())
-    
-    // Fixed camera rotation (doesn't follow character rotation for strafe movement)
-    const fixedCameraRotation = useRef(0)
     
     // Temporary vectors for calculations
     const tempVec = useMemo(() => new THREE.Vector3(), [])
@@ -35,12 +32,10 @@ export function CameraRig({
         
         const characterPos = tempVec.set(pos.x, pos.y, pos.z);
         
-        // Only update camera rotation when character is moving forward/backward
-        // Don't update when strafing (left/right movement)
-        
-        // Calculate ideal camera position using the fixed rotation
+        // Use the character's rotation (from mouse movement) for camera positioning
+        // Calculate ideal camera position behind the character
         const behindOffset = tempVec2.set(0, 0, -distance);
-        behindOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), fixedCameraRotation.current);
+        behindOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
         
         idealCameraPos.current.copy(characterPos)
             .add(behindOffset)
@@ -50,9 +45,9 @@ export function CameraRig({
         idealLookAt.current.copy(characterPos)
             .setY(characterPos.y + heightOffset);
         
-        // Add a slight forward offset to the look-at point using the fixed rotation
+        // Add a slight forward offset to the look-at point using character rotation
         const forwardOffset = new THREE.Vector3(0, 0, 2);
-        forwardOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), fixedCameraRotation.current);
+        forwardOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
         idealLookAt.current.add(forwardOffset);
         
         // Initialize camera position on first frame

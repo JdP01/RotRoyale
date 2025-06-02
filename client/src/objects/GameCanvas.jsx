@@ -59,21 +59,21 @@ export default function GameCanvas() {
           <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300}>
             <OrbitControls />
 
-            <Dino ref={dinoRef} onRotationChange={setDinoRotation} />
+            <Dino ref={dinoRef} onRotationChange={setDinoRotation} castShadows/>
 
             <CameraRig
               targetRef={dinoRef}
               characterRotation={dinoRotation}
               distance={8}
-              height={4}
-              heightOffset={1}
+              height={3.5}
+              heightOffset={0.5}
               stiffness={0.08}
               lookStiffness={0.12}
             />
 
             {/* FIXED: Floor with proper shadow receiving */}
             <RigidBody interpolate={true} type="fixed" name="floor" colliders="cuboid" restitution={0} friction={1}>
-              <Box args={[100, 1, 100]} receiveShadow>
+              <Box args={[100, 1, 100]} receiveShadows>
                 <meshStandardMaterial color="springgreen" />
               </Box>
             </RigidBody>
