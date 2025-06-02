@@ -97,7 +97,7 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
             gravityScale={2}
         >
             <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, Math.PI, 0]} >
-                <primitive object={Body} position={[0, 0, 0]} />
+                <primitive object={Body} position={[0, 0, 0]}  metalness={0} roughness={1}/>
 
                 <group ref={headRef} position={[0, 2.2, 1.3]} >
                     <primitive object={Head} />

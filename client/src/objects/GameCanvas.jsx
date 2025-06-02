@@ -6,7 +6,7 @@ import { Dino } from './dino';
 import * as THREE from "three";
 import { CameraRig } from './CameraRig';
 
-const lightPos = [100,1,100];
+const lightPos = [100,10,100];
 
 export const Controls = {
   forward: "forward",
@@ -37,14 +37,14 @@ export default function GameCanvas() {
           shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap } 
       }}
       >
-        <Sky sunPosition = {lightPos} mieCoefficient={0.001} rayleigh={5} turbidity={20} castShadow/>
+        <Sky sunPosition = {lightPos} mieCoefficient={0.001} rayleigh={0.2} turbidity={20} castShadow/>
         <Suspense fallback={null}>
           
           {/* FIXED: Proper lighting setup for shadows */}
-          <ambientLight intensity={0.3} />
+          <ambientLight intensity={0.37} />
           <directionalLight 
             position={lightPos} 
-            intensity={50} 
+            intensity={4.5} 
             color={'#d1b269'} 
             castShadow
             shadow-mapSize-width={2048}
@@ -56,7 +56,7 @@ export default function GameCanvas() {
             shadow-camera-bottom={-20}
           />
 
-          <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300}>
+          <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300} debug>
             <OrbitControls />
 
             <Dino ref={dinoRef} onRotationChange={setDinoRotation} castShadows/>
@@ -74,7 +74,7 @@ export default function GameCanvas() {
             {/* FIXED: Floor with proper shadow receiving */}
             <RigidBody interpolate={true} type="fixed" name="floor" colliders="cuboid" restitution={0} friction={1}>
               <Box args={[100, 1, 100]} receiveShadows>
-                <meshStandardMaterial color="springgreen" />
+                <meshStandardMaterial color="springgreen"  metalness={0} roughness={1}/>
               </Box>
             </RigidBody>
           </Physics>
