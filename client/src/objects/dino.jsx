@@ -1,6 +1,6 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useMemo, useEffect} from 'react';
 import {useGLTF} from '@react-three/drei'; 
-import {RigidBody} from '@react-three/rapier';
+import {RigidBody, CapsuleCollider} from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { useDinoAnimations } from "./dinoAnimations";
@@ -17,13 +17,21 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
     const mainGroupRef = useRef();
     
     // Load all models
-    const { scene: Body } = useGLTF('/dino_parts1/body.glb');
-    const { scene: Head } = useGLTF('/dino_parts1/head.glb');
+    const { scene: Body } = useGLTF('/dino_parts1/dino_body.glb');
+    const { scene: Head } = useGLTF('/dino_parts1/dino_head.glb');
     const { scene: LeftLeg } = useGLTF('/dino_parts1/left_leg.glb'); 
-    const { scene: armLeft } = useGLTF('/dino_parts1/arm_left.glb')
-    const { scene: tail } = useGLTF('/dino_parts1/tail.glb')
-    const { scene: weapon } = useGLTF('/objects/glock_game.glb')
+    const { scene: armLeft } = useGLTF('/dino_parts1/left_arm.glb')
+    const { scene: tail } = useGLTF('/dino_parts1/dino_tail.glb')
+    const { scene: weapon } = useGLTF('/objects/game_glock.glb')
     
+    useEffect(() => {
+        Body.traverse((child)=> { 
+            if(child.isMesh){
+                Body.castShadow = true;
+                Body.receiveShadow = true;
+            }
+        })
+    }, [Body]);
     // Animation states
     const [isMoving, setIsMoving] = useState(false);
     const [isSprinting, setIsSprinting] = useState(false);
@@ -77,7 +85,7 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
     return( 
         <>
         <RigidBody ref={bodyRef}
-            position={[2, 5, 0]} 
+            position={[2, 3, 0]} 
             onCollisionEnter={({other}) => { 
                 console.log("colliding with", other.rigidBodyObject?.name);
                 if (other.rigidBodyObject.name === "floor") {
@@ -92,17 +100,18 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
             }}
             enabledRotations={[false, false, false]}
             type="dynamic"
-            colliders="hull"
+            colliders = "ball"
             interpolate={true}
             gravityScale={2}
         >
-            <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, Math.PI, 0]} >
-                <primitive object={Body} position={[0, 0, 0]}  metalness={0} roughness={1}/>
 
-                <group ref={headRef} position={[0, 2.2, 1.3]} >
-                    <primitive object={Head} />
-                </group>
+            <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, Math.PI, 0]} >
+
+                <primitive object={Body} position={[0, 0, 0]}  metalness={0} roughness={1}/>
                 
+                <group ref={headRef} position={[0, 2.2, 1.3]} >
+                    <primitive object={Head}  />
+                </group>
                 <group ref={legLeftRef} position={[1, 1, 1]}>
                     <primitive object={LeftLeg} position={[0, -1.3, -0.2]} />
                 </group>

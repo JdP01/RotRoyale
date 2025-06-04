@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     // Movement controls 
     const jump = () => {
-        bodyRef.current.applyImpulse({x: 0, y: 7, z: 0});
+        bodyRef.current.applyImpulse({x: 0, y: 25, z: 0});
         isOnFloor.current = false;
         setIsJumping(true);
     }
@@ -135,7 +135,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
             if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
             
-            const rotationSpeed = 8; // Adjust this to control turning speed
+            const rotationSpeed = 10; // Adjust this to control turning speed
             const newRotation = characterRotation + angleDiff * Math.min(1, delta * rotationSpeed);
             setCharacterRotation(newRotation);
         }
@@ -144,6 +144,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             jump();
             isOnFloor.current = true; 
         }
+
         
         setIsMoving(moving);
         setIsSprinting(sprintPressed && moving);
