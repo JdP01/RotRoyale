@@ -1,6 +1,6 @@
 import React, {useState, useRef, useMemo, useEffect} from 'react';
 import {useGLTF} from '@react-three/drei'; 
-import {RigidBody, CapsuleCollider} from '@react-three/rapier';
+import {RigidBody, CapsuleCollider, CuboidCollider} from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { useDinoAnimations } from "./dinoAnimations";
@@ -100,15 +100,19 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
             }}
             enabledRotations={[false, false, false]}
             type="dynamic"
-            colliders = "ball"
+            colliders = "hull"
             interpolate={true}
-            gravityScale={2}
+            gravityScale={5}
         >
 
             <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, Math.PI, 0]} >
 
                 <primitive object={Body} position={[0, 0, 0]}  metalness={0} roughness={1}/>
                 
+                <CuboidCollider args = {[0.4,1,1]} position={[2.3,2.46,3.6]} rotation={[0.6,0,0]} restitution={0}/>
+                <CuboidCollider args = {[0.4,1,1]} position={[-2.3,2.46,3.6]} rotation={[0.6,0,0]} restitution={0}/>
+
+
                 <group ref={headRef} position={[0, 2.2, 1.3]} >
                     <primitive object={Head}  />
                 </group>
