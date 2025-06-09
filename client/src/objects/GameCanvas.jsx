@@ -6,6 +6,7 @@ import { Dino } from './dino';
 import * as THREE from "three";
 import { CameraRig } from './CameraRig';
 import MatchmakingSystem from './MatchmakingSystem';
+import './GameCanvas.css'; // Import the CSS file
 
 const lightPos = [100, 30, 100];
 const mapScale = 5.5;
@@ -456,49 +457,22 @@ export default function GameCanvas({ userSession }) {
   // Menu UI
   if (gameState === 'menu') {
     return (
-      <div style={{
-        width: '100vw',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white'
-      }}>
-        <h1 style={{ fontSize: '48px', marginBottom: '50px', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+      <div className="game-menu">
+        <h1 className="game-title">
           Dino Game
         </h1>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="menu-buttons">
           <button 
             onClick={startSinglePlayer}
-            style={{
-              background: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              padding: '20px 40px',
-              fontSize: '18px',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-            }}
+            className="menu-button single-player-button"
           >
             Single Player
           </button>
           
           <button 
             onClick={startMultiplayer}
-            style={{
-              background: '#2196F3',
-              color: 'white',
-              border: 'none',
-              padding: '20px 40px',
-              fontSize: '18px',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-            }}
+            className="menu-button multiplayer-button"
           >
             Multiplayer
           </button>
@@ -510,26 +484,10 @@ export default function GameCanvas({ userSession }) {
   // Matchmaking UI
   if (gameState === 'matchmaking') {
     return (
-      <div style={{
-        width: '100vw',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        position: 'relative'
-      }}>
+      <div className="matchmaking-container">
         <button 
           onClick={backToMenu}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            left: '20px',
-            background: '#666',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            zIndex: 1001
-          }}
+          className="back-button"
         >
           Back to Menu
         </button>
@@ -545,21 +503,9 @@ export default function GameCanvas({ userSession }) {
 
   // Game UI
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+    <div className="game-container">
       {/* Enhanced Game Info Overlay */}
-      <div style={{
-        position: 'absolute',
-        top: '10px',
-        left: '10px',
-        background: 'rgba(0,0,0,0.8)',
-        color: 'white',
-        padding: '15px',
-        borderRadius: '8px',
-        zIndex: 1000,
-        fontSize: '14px',
-        maxWidth: '350px',
-        fontFamily: 'monospace'
-      }}>
+      <div className="game-info-overlay">
         <p><strong>Game Mode:</strong> {currentMatch ? 'Multiplayer' : 'Single Player'}</p>
         {currentMatch && (
           <>
@@ -569,10 +515,10 @@ export default function GameCanvas({ userSession }) {
             <p><strong>My Player ID:</strong> {userSession?.account?.user?.id?.substring(0, 8)}...</p>
             
             {Object.keys(otherPlayersData).length > 0 && (
-              <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '10px', background: 'rgba(76, 175, 80, 0.2)', padding: '8px', borderRadius: '4px' }}>
+              <div className="other-players-summary">
                 <p><strong>Other Players:</strong></p>
                 {Object.entries(otherPlayersData).map(([playerId, data]) => (
-                  <div key={playerId} style={{ marginLeft: '10px' }}>
+                  <div key={playerId} className="other-player-item">
                     • {data.username || playerId.substring(0, 8)}...
                     <br />
                     &nbsp;&nbsp;Pos: ({data.position?.x?.toFixed(1)}, {data.position?.y?.toFixed(1)}, {data.position?.z?.toFixed(1)})
@@ -587,16 +533,7 @@ export default function GameCanvas({ userSession }) {
         
         <button 
           onClick={backToMenu}
-          style={{
-            background: '#666',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginTop: '10px',
-            fontSize: '12px'
-          }}
+          className="info-back-button"
         >
           Back to Menu
         </button>

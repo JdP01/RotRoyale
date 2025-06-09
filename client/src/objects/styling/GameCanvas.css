@@ -1,0 +1,116 @@
+/* GameCanvas.css */
+
+.game-menu {
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+  
+  .game-title {
+    font-size: 48px;
+    margin-bottom: 50px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  .menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .menu-button {
+    border: none;
+    padding: 20px 40px;
+    font-size: 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .single-player-button {
+    background: #4caf50;
+    color: white;
+  }
+  
+  .multiplayer-button {
+    background: #2196f3;
+    color: white;
+  }
+  
+  .matchmaking-container {
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+  }
+  
+  .back-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: #666;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 1001;
+  }
+  
+  .game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+  
+  .game-info-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 1000;
+    font-size: 14px;
+    max-width: 350px;
+    font-family: monospace;
+  }
+  
+  .game-info-overlay p {
+    margin-bottom: 5px; /* Adjust spacing as needed */
+  }
+  
+  .game-info-overlay strong {
+    color: #a7d9ff; /* A slightly different color for strong tags */
+  }
+  
+  .other-players-summary {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-top: 10px;
+    background: rgba(76, 175, 80, 0.2);
+    padding: 8px;
+    border-radius: 4px;
+  }
+  
+  .other-player-item {
+    margin-left: 10px;
+  }
+  
+  .info-back-button {
+    background: #666;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  
