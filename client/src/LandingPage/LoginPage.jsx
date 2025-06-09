@@ -1,6 +1,6 @@
 // src/LoginPage.jsx
 import React, { useState } from 'react';
-import './styling/LoginPage.css';
+import './LoginPage.css';
 import * as Nakama from "@heroiclabs/nakama-js";
 
 const googleImage = "/images/google.svg";

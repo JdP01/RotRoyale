@@ -1,6 +1,6 @@
 // src/objects/MatchmakingSystem.jsx
 import React, { useState, useEffect } from 'react';
-import './MatchmakingSystem.css'; // Import the CSS file
+import './styling/MatchmakingSystem.css'; // Import the CSS file
 
 const MatchmakingSystem = ({ userSession, onMatchFound, onMatchmakingError }) => {
   const [isSearching, setIsSearching] = useState(false);

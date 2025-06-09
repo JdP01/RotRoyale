@@ -6,7 +6,7 @@ import { Dino } from './dino';
 import * as THREE from "three";
 import { CameraRig } from './CameraRig';
 import MatchmakingSystem from './MatchmakingSystem';
-import './GameCanvas.css'; // Import the CSS file
+import './styling/GameCanvas.css'; // Import the CSS file
 
 const lightPos = [100, 30, 100];
 const mapScale = 5.5;
