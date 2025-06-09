@@ -1,47 +1,106 @@
 // src/LoginPage.jsx
 import React, { useState } from 'react';
-import './LoginPage.css'; // We'll heavily rely on this CSS file now
-const googleImage = "/images/google.svg"
+import './LoginPage.css';
+import * as Nakama from "@heroiclabs/nakama-js";
 
-// Placeholder for actual social login icons
-const GoogleIcon = () =>   <img src={googleImage} alt="Google sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
-const FacebookIcon = () => <img src={googleImage} alt="Google sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
+const googleImage = "/images/google.svg";
+const GoogleIcon = () => <img src={googleImage} alt="Google sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
+const FacebookIcon = () => <img src={googleImage} alt="Facebook sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
 
 function LoginPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // --- IMPORTANT: Image Handling ---
-  // For a background image, it's often best to set it via CSS for better control.
-  // However, if you need it to be dynamic from imagePath:
-  // 1. Import it if it's in src/assets:
-  // import backgroundImage from './assets/your-background-image.jpg';
-  // 2. Or ensure imagePath is a valid URL if it's from public folder or external.
-  const imagePath = "/images/DinoConceptArt/Title.png"; // Example, replace or import
-  const googleImage = "/images/google.png"
-  const handleUsernamePasswordLogin = (event) => {
+  const imagePath = "/images/DinoConceptArt/Title.png";
+
+  // Updated LoginPage.jsx authentication function
+  const handleUsernamePasswordLogin = async (event) => {
     event.preventDefault();
-    if (username === "Juan" && password === "yes") {
-      onLoginSuccess();
-    } else {
-      alert('Invalid credentials for username/password');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log("Attempting to authenticate with Nakama...");
+      
+      // Create client with explicit configuration
+      const client = new Nakama.Client("defaultkey", "127.0.0.1", 7350, false);
+      
+      // Add timeout and retry logic
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timeout')), 10000)
+      );
+
+      const authPromise = client.authenticateEmail(
+        username,
+        password,
+        true, // create account if not exists
+        username // set username as account's username
+      );
+
+      const session = await Promise.race([authPromise, timeoutPromise]);
+      console.log("Authenticated with Nakama:", session);
+
+      // Connect socket for real-time features
+      const socket = client.createSocket(false, false);
+      await socket.connect(session);
+      console.log("Socket connected successfully");
+
+      // Get user account info
+      const account = await client.getAccount(session);
+      console.log("User account:", account);
+
+      // Pass all necessary data to parent
+      onLoginSuccess({ 
+        client, 
+        session, 
+        socket, 
+        account,
+        username: account.user.username 
+      });
+
+    } catch (err) {
+      console.error("Nakama authentication error:", err);
+      
+      let errorMessage = "Login failed. Please try again.";
+      
+      // Enhanced error handling
+      if (err.message.includes("timeout") || err.message.includes("TIMEOUT")) {
+        errorMessage = "Connection timeout. Please check if Nakama server is running.";
+      } else if (err.message.includes("CORS") || err.response?.type === 'cors') {
+        errorMessage = "CORS error. Please check server configuration.";
+      } else if (err.status === 401 || err.message.includes("401")) {
+        errorMessage = "Authentication failed. Check your credentials.";
+      } else if (err.message.includes("UNAVAILABLE") || err.message.includes("ECONNREFUSED")) {
+        errorMessage = "Cannot connect to server. Is Nakama running on port 7350?";
+      } else if (err.message.includes("network") || err.message.includes("fetch")) {
+        errorMessage = "Network error. Check your connection and server status.";
+      }
+      
+      setError(errorMessage);
+      console.error("Detailed error:", {
+        message: err.message,
+        status: err.status,
+        response: err.response,
+        stack: err.stack
+      });
+      
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = () => {
-    alert('Google Login Clicked (implement logic)');
+    alert('Google Login not implemented yet');
   };
 
   const handleFacebookLogin = () => {
-    alert('Facebook Login Clicked (implement logic)');
+    alert('Facebook Login not implemented yet');
   };
 
-  // Style for the background image div
   const backgroundStyle = {
-    // If using an imported image:
-    // backgroundImage: `url(${backgroundImage})`,
-    // If using imagePath string:
-    backgroundImage: `url("${imagePath}")`, // Make sure imagePath is a valid URL or relative path from public
+    backgroundImage: `url("${imagePath}")`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -49,19 +108,20 @@ function LoginPage({ onLoginSuccess }) {
 
   return (
     <div className="login-page-container" style={imagePath ? backgroundStyle : {}}>
-      {/* This div is now primarily for positioning the form section */}
       <div className="login-form-overlay-section">
         <div className="login-form-content">
           <h1>Game Login</h1>
           <form onSubmit={handleUsernamePasswordLogin}>
             <div className="input-group">
-              <label htmlFor="username">Username</label>
+              <label htmlFor="username">Username (Email)</label>
               <input
-                type="text"
+                type="email"
                 id="username"
-                placeholder="Type your username"
+                placeholder="Enter your email"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                required
+                disabled={isLoading}
               />
             </div>
             <div className="input-group">
@@ -72,20 +132,22 @@ function LoginPage({ onLoginSuccess }) {
                 placeholder="Type your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
               />
             </div>
-            <button type="submit" className="login-button">
-              Login
+            <button type="submit" className="login-button" disabled={isLoading}>
+              {isLoading ? 'Connecting...' : 'Login'}
             </button>
+            {error && <p style={{color: 'red', marginTop: '10px', fontSize: '14px'}}>{error}</p>}
           </form>
 
           <div className="social-login-divider">Or Sign In Using</div>
-
           <div className="social-login-buttons">
-            <button onClick={handleGoogleLogin} className="social-button google-button">
+            <button onClick={handleGoogleLogin} className="social-button google-button" disabled={isLoading}>
               <GoogleIcon /> Google
             </button>
-            <button onClick={handleFacebookLogin} className="social-button facebook-button">
+            <button onClick={handleFacebookLogin} className="social-button facebook-button" disabled={isLoading}>
               <FacebookIcon /> Facebook
             </button>
           </div>
