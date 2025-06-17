@@ -65,8 +65,8 @@ export const OtherPlayer = ({ playerData, userSession }) => {
       <mesh position={[0, 5, 0]}>
         <boxGeometry args={[3, 0.5, 0.1]} />
         <meshStandardMaterial 
-          color="yellow" 
-          emissive="yellow" 
+          color= "yellow" 
+          emissive = "yellow" 
           emissiveIntensity={0.3}
         />
       </mesh>
@@ -191,7 +191,7 @@ const GameLogic = ({
         return (
           <OtherPlayer 
             key={playerId}
-            playerData={playerData} 
+            playerData={playerData}
             userSession={userSession}
           />
         );
@@ -210,7 +210,7 @@ const GameLogic = ({
   );
 };
 
-// Game environment component
+// Game environment (lighting, map, etc.)
 const GameEnvironment = () => {
   const { scene: gameMap } = useGLTF('/objects/mapTest.glb');
 
@@ -282,16 +282,17 @@ export default function GameCanvas({ userSession }) {
   const dinoRef = useRef(null);
 
   // Enhanced socket event handling
-  useEffect(() => {
+  useEffect(() => { //Listens actively for changes in userSession, only runs when userSession changes
     if (!userSession?.socket) return;
 
     const socket = userSession.socket;
-
+    
+    //Listener for real-time data updates for other players
     socket.onmatchdata = (matchData) => {
       console.log("Received match data:", matchData);
       console.log("Current user ID:", userSession.account.user.id);
       
-      try {
+      try { //parses matchData to gameUpdate 
         let gameUpdate;
         if (typeof matchData.data === 'string') {
           gameUpdate = JSON.parse(matchData.data);
@@ -328,16 +329,17 @@ export default function GameCanvas({ userSession }) {
       }
     };
 
+    //Listener for match presence updates (when players joins/leaves)
     socket.onmatchpresence = (matchPresence) => {
       console.log("Match presence update:", matchPresence);
       
       const joinedPlayers = matchPresence.joins || [];
       const leftPlayers = matchPresence.leaves || [];
       
-      setConnectedPlayers(prev => {
+      setConnectedPlayers(prev => { // Update connected players list (deletion and addition)
         let updated = [...prev];
         
-        joinedPlayers.forEach(player => {
+        joinedPlayers.forEach(player => { // Add new players
           if (!updated.find(p => p.user_id === player.user_id)) {
             updated.push(player);
           }
@@ -346,7 +348,7 @@ export default function GameCanvas({ userSession }) {
         leftPlayers.forEach(player => {
           updated = updated.filter(p => p.user_id !== player.user_id);
           
-          setOtherPlayersData(prev => {
+          setOtherPlayersData(prev => { // Remove player data when they leave
             const newData = { ...prev };
             delete newData[player.user_id];
             return newData;
