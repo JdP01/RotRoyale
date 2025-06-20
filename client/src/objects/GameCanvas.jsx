@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { CameraRig } from './CameraRig';
 import MatchmakingSystem from './MatchmakingSystem';
 import GameEnvironment from './GameEnvironment';
-import './styling/GameCanvas.css'; // Import the CSS file
+import './styling/GameCanvas.css'; // Import the CSS fileI  
 
 export const Controls = {
   forward: "forward",
@@ -18,38 +18,21 @@ export const Controls = {
   sprint: "sprint"
 }
 
-// Remove the current OtherPlayer component and replace with:
 export const OtherPlayer = ({ playerData, userSession }) => {
-  const dinoRef = useRef();
-
-  useFrame(() => {
-    if (dinoRef.current && playerData) {
-      // Update position
-      if (playerData.position) {
-        dinoRef.current.setTranslation({
-          x: playerData.position.x || 0,
-          y: playerData.position.y || 3,
-          z: playerData.position.z || 0
-        });
-      }
-
-      // Update rotation
-      if (playerData.rotation !== undefined) {
-        const quaternion = new THREE.Quaternion();
-        quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), playerData.rotation);
-        dinoRef.current.setRotation(quaternion);
-      }
-    }
-  });
-
-  return (
-    <Dino 
-      ref={dinoRef}
-      castShadow
-      userSession={userSession}
-      isNetworkedPlayer={true} // Add this prop to Dino component
-    />
-  );
+    return (
+        <Dino
+            ref={useRef()}
+            userSession={userSession}
+            isNetworkedPlayer={true}
+            networkPosition={playerData.position}
+            networkRotation={playerData.rotation + (Math.PI)} // Adjust rotation to match dino's facing direction
+            networkAnimationState={{
+                isMoving: playerData.position ? true : false,
+                isSprinting: false,
+                isJumping: false
+            }}
+        />
+    );
 };
 
 // Fixed GameLogic component
