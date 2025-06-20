@@ -1,5 +1,4 @@
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom/client';
 import './index.css';
 import GameCanvas from './objects/GameCanvas';
 import LoginPage from './LandingPage/LoginPage'; 

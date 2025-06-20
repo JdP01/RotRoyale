@@ -1,15 +1,13 @@
 import React, { Suspense, useMemo, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Box, KeyboardControls, OrbitControls, Sky, useGLTF } from '@react-three/drei';
-import { Physics, RigidBody } from '@react-three/rapier';
+import { Box, KeyboardControls, OrbitControls, Sky } from '@react-three/drei';
+import { Physics } from '@react-three/rapier';
 import { Dino } from './dino';
 import * as THREE from "three";
 import { CameraRig } from './CameraRig';
 import MatchmakingSystem from './MatchmakingSystem';
+import GameEnvironment from './GameEnvironment';
 import './styling/GameCanvas.css'; // Import the CSS file
-
-const lightPos = [100, 30, 100];
-const mapScale = 5.5;
 
 export const Controls = {
   forward: "forward",
@@ -20,90 +18,37 @@ export const Controls = {
   sprint: "sprint"
 }
 
-// Simplified and fixed OtherPlayer component
+// Remove the current OtherPlayer component and replace with:
 export const OtherPlayer = ({ playerData, userSession }) => {
-  const { scene: Body } = useGLTF('/dino_parts1/dino_body.glb');
-  const { scene: Head } = useGLTF('/dino_parts1/dino_head.glb');
-  const { scene: LeftLeg } = useGLTF('/dino_parts1/left_leg.glb');
-  const { scene: armLeft } = useGLTF('/dino_parts1/left_arm.glb')
-  const { scene: tail } = useGLTF('/dino_parts1/dino_tail.glb')
-  const { scene: weapon } = useGLTF('/objects/game_glock.glb')
-  const groupRef = useRef();
+  const dinoRef = useRef();
 
   useFrame(() => {
-    if (groupRef.current && playerData) {
-      // Update position - no lerping for now to make it more obvious
+    if (dinoRef.current && playerData) {
+      // Update position
       if (playerData.position) {
-        groupRef.current.position.set(
-          playerData.position.x || 0,
-          playerData.position.y || 3,
-          playerData.position.z || 0
-        );
+        dinoRef.current.setTranslation({
+          x: playerData.position.x || 0,
+          y: playerData.position.y || 3,
+          z: playerData.position.z || 0
+        });
       }
 
       // Update rotation
       if (playerData.rotation !== undefined) {
-        groupRef.current.rotation.y = playerData.rotation;
+        const quaternion = new THREE.Quaternion();
+        quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), playerData.rotation);
+        dinoRef.current.setRotation(quaternion);
       }
     }
   });
 
-  // Simple fallback visual for debugging
   return (
-    <group ref={groupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, Math.PI, 0]}>
-      {/* Bright debug box - make it very visible */}
-
-      {/* Username label above the debug box */}
-      <mesh position={[0, 5, 0]}>
-        <boxGeometry args={[3, 0.5, 0.1]} />
-        <meshStandardMaterial
-          color="red"
-          //emissive="red"
-          opacity={0.8}
-          //emissiveIntensity={0.3}
-        />
-      </mesh>
-
-      {/* Dino parts with better cloning */}
-      {Body && <primitive object={Body.clone(true)} position={[0, 0, 0]} />}
-      {Head && <primitive object={Head.clone(true)} position={[0, 2.2, 1.3]} />}
-      {LeftLeg && (
-        <>
-          <primitive object={LeftLeg.clone(true)} position={[1, -0.3, 0.8]} />
-          <primitive object={LeftLeg.clone(true)} scale={[-1, 1, 1]} position={[-1, -0.3, 0.8]} />
-        </>
-      )}
-
-      {armLeft && (
-        <>
-          <group position={[-1.25, 1.3, 1.3]}>
-            <primitive object={armLeft.clone(true)} />
-            {weapon && (
-              <primitive
-                object={weapon.clone(true)}
-                rotation={[0, -1.5, 0]}
-                scale={[0.15, 0.15, 0.15]}
-                position={[-0.2, 0.5, 1]}
-              />
-            )}
-          </group>
-
-          <group position={[1.25, 1.3, 1.3]}>
-            <primitive object={armLeft.clone(true)} scale={[-1, 1, 1]} />
-            {weapon && (
-              <primitive
-                object={weapon.clone(true)}
-                rotation={[0, -1.5, 0]}
-                scale={[0.15, 0.15, 0.15]}
-                position={[0.2, 0.5, 1]}
-              />
-            )}
-          </group>
-        </>
-      )}
-
-      {tail && <primitive object={tail.clone(true)} position={[0, 0, 0]} />}
-    </group>
+    <Dino 
+      ref={dinoRef}
+      castShadow
+      userSession={userSession}
+      isNetworkedPlayer={true} // Add this prop to Dino component
+    />
   );
 };
 
@@ -199,69 +144,6 @@ const GameLogic = ({
         stiffness={0.1}
         lookStiffness={0.12}
       />
-    </>
-  );
-};
-
-// Game environment (lighting, map, etc.)
-const GameEnvironment = () => {
-  const { scene: gameMap } = useGLTF('/objects/mapTest.glb');
-
-  useEffect(() => {
-    gameMap.traverse((child) => {
-      if (child.isMesh) {
-        gameMap.castShadow = true;
-        gameMap.receiveShadow = true;
-      }
-    })
-  }, [gameMap]);
-
-  return (
-    <>
-      <Sky sunPosition={lightPos} mieCoefficient={0.001} rayleigh={0.2} turbidity={20} castShadow />
-
-      <ambientLight intensity={0.8} color="#87CEEB" />
-      <directionalLight
-        position={lightPos}
-        intensity={3}
-        color={'#d1b269'}
-        castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
-        shadow-camera-far={100}
-        shadow-camera-left={-50}
-        shadow-camera-right={50}
-        shadow-camera-top={50}
-        shadow-camera-bottom={-50}
-        shadow-bias={-0.1}
-      />
-      <directionalLight
-        position={[-50, 20, -50]}
-        intensity={1}
-        color={'#b3d9ff'}
-      />
-      <directionalLight
-        position={[0, 10, -100]}
-        intensity={1.2}
-        color={'#ffd700'}
-      />
-
-      <mesh position={[0, 0.75, 0]} rotation={[-Math.PI / 2, 0, 0]} > {/* Water */}
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#0074ad" transparent opacity={0.8}
-          metalness={0.1} roughness={1} envMapIntensity={0.8} />
-      </mesh>
-
-      <RigidBody
-        colliders="trimesh"
-        type="fixed"
-        name="floor"
-        interpolate={true}
-        friction={0}
-        restitution={0}
-      >
-        <primitive object={gameMap} scale={mapScale} castShadow receiveShadow={true} />
-      </RigidBody>
     </>
   );
 };
@@ -576,7 +458,7 @@ export default function GameCanvas({ userSession }) {
       {/* Game Canvas */}
       <KeyboardControls map={map}>
         <Canvas shadows gl={{
-          shadowMap: { enabled: true, type: THREE.UnfilteredShadowMap }
+          shadowMap: { enabled: true, type: THREE.UnfiltedShadowMap }
         }}>
           <Suspense fallback={null}>
             <Physics gravity={[0, -9.81, 0]} timeStep={1 / 100}>

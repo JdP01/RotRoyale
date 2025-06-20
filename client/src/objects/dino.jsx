@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { useDinoAnimations } from "./dinoAnimations";
 import { useDinoControls } from "./dinoControls";
 
-export const Dino = ({ref: bodyRef, onRotationChange}) => { 
+export const Dino = ({ref: bodyRef, onRotationChange, isNetworkedPlayer = false}) => { 
     // Refs for body parts
     const legLeftRef = useRef();
     const legRightRef = useRef();
@@ -45,11 +45,15 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
     // Get controller logic - now returns both camera and character rotations
     const { handleMovement, cameraRotation, characterRotation } = useDinoControls(bodyRef, isOnFloor, setIsJumping);
 
+     // Only use controls if not a networked player
+      const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, isOnFloor, setIsJumping) : null;
+
     // Game Frame Loop 
     useFrame((_, delta) => { 
-        if (!bodyRef.current) return;
+        if (!bodyRef.current || isNetworkedPlayer) return;
         
-        handleMovement(delta, setIsMoving, setIsSprinting);
+        // Use the controls object instead of handleMovement directly
+        controls.handleMovement(delta, setIsMoving, setIsSprinting);
         
         // Update animations and get body bob height
         const bodyBobHeight = updateAdvancedAnimations(delta, {
@@ -70,14 +74,14 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
         if (mainGroupRef.current && bodyRef.current) {
             mainGroupRef.current.position.y = bodyBobHeight;
             
-            // Use characterRotation for visual appearance
+            // Use controls.characterRotation instead
             const quaternion = new THREE.Quaternion();
-            quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), characterRotation);
+            quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), controls.characterRotation);
             bodyRef.current.setRotation(quaternion, true);
             
-            // Notify parent component of CAMERA rotation change for camera positioning
+            // Use controls.cameraRotation instead
             if (onRotationChange) {
-                onRotationChange(cameraRotation);
+                onRotationChange(controls.cameraRotation);
             }
         }
     });
@@ -111,7 +115,6 @@ export const Dino = ({ref: bodyRef, onRotationChange}) => {
                 
                 <CuboidCollider args = {[0.4,1,1]} position={[2.3,2.46,3.6]} rotation={[0.6,0,0]} restitution={0}/>
                 <CuboidCollider args = {[0.4,1,1]} position={[-2.3,2.46,3.6]} rotation={[0.6,0,0]} restitution={0}/>
-
 
                 <group ref={headRef} position={[0, 2.2, 1.3]} >
                     <primitive object={Head}  />
