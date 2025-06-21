@@ -4,13 +4,33 @@ import { Controls } from "./GameCanvas";
 import { useEffect, useRef, useState } from 'react';
 
 export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
+    const [isInJumpAction, setIsInJumpAction] = useState(false);
+
     // Movement controls 
     const jump = () => {
         bodyRef.current.applyImpulse({x: 0, y: 25, z: 0});
-        isOnFloor.current = false;
         setIsJumping(true);
+        setIsInJumpAction(true);
     }
-    
+
+    useEffect(() => {
+        let frameCount = 0;
+        
+        const checkLanding = () => {
+            if (isInJumpAction) {
+                const vel = bodyRef.current.linvel();
+                // Only reset jump state when we're moving downward and near ground
+                if (vel.y <= 0 && isOnFloor.current) {
+                    setIsInJumpAction(false);
+                    setIsJumping(false);
+                }
+            }
+        };
+
+        const interval = setInterval(checkLanding, 16);
+        return () => clearInterval(interval);
+    }, [isInJumpAction]);
+
     const jumpPressed = useKeyboardControls((state) => state[Controls.jump]);
     const forwardPressed = useKeyboardControls((state) => state[Controls.forward]);
     const backPressed = useKeyboardControls((state) => state[Controls.back]);
@@ -140,9 +160,8 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             setCharacterRotation(newRotation);
         }
         
-        if (jumpPressed && isOnFloor.current) { 
+        if (jumpPressed && !isInJumpAction && isOnFloor.current) {
             jump();
-            isOnFloor.current = true; 
         }
 
         
