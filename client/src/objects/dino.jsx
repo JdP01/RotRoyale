@@ -181,6 +181,7 @@ export const Dino = ({
             colliders = "hull"
             interpolate={true}
             gravityScale={5}
+            friction={0}
         >
 
             <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, Math.PI, 0]} >

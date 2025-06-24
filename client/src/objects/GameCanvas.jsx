@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { CameraRig } from './CameraRig';
 import MatchmakingSystem from './MatchmakingSystem';
 import GameEnvironment from './GameEnvironment';
+import {MenuUI,MatchmakingUI} from './GameUI';
 import './styling/GameCanvas.css'; // Import the CSS fileI  
 
 export const Controls = {
@@ -356,80 +357,77 @@ export default function GameCanvas({ userSession }) {
   // Menu UI
   if (gameState === 'menu') {
     return (
-      <div className="game-menu">
-        <h1 className="game-title">
-          Dino Game
-        </h1>
-
-        <div className="menu-buttons">
-          <button
-            onClick={startSinglePlayer}
-            className="menu-button single-player-button"
-          >
-            Single Player
-          </button>
-
-          <button
-            onClick={startMultiplayer}
-            className="menu-button multiplayer-button"
-          >
-            Multiplayer
-          </button>
-        </div>
-      </div>
+      <MenuUI
+      startSinglePlayer={startSinglePlayer}
+      startMultiplayer={startMultiplayer}
+    />
     );
   }
 
   // Matchmaking UI
   if (gameState === 'matchmaking') {
     return (
-      <div className="matchmaking-container">
-        <button
-          onClick={backToMenu}
-          className="back-button"
-        >
-          Back to Menu
-        </button>
-
-        <MatchmakingSystem
-          userSession={userSession}
-          onMatchFound={handleMatchFound}
-          onMatchmakingError={handleMatchmakingError}
-        />
-      </div>
+      <MatchmakingUI
+      userSession={userSession}
+      backToMenu={backToMenu}
+      handleMatchFound={handleMatchFound}
+      handleMatchmakingError={handleMatchmakingError}
+    />
     );
   }
+const handleRespawn = () => {
+  if (dinoRef.current) {
+    // Reset position to origin (0, 0, 0) or whatever your spawn point is
+    const spawnPosition = { x: 0, y: 5, z: 0 }; // Adjust Y value based on your ground level
+    // Set the position using Rapier physics body
+    dinoRef.current.setTranslation(spawnPosition, true);
+    // Reset velocity to stop any momentum
+    dinoRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    dinoRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    // Reset rotation
+    setDinoRotation(0);
+    dinoRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+    
+    console.log("Player respawned at:", spawnPosition);
+  }
+};
 
-  // Game UI
-  return (
-    <div className="game-container">
-      {/* Enhanced Game Info Overlay */}
-      <div className="game-info-overlay">
-        <p><strong>Game Mode:</strong> {currentMatch ? 'Multiplayer' : 'Single Player'}</p>
-        {currentMatch && (
-          <>
-            <p><strong>Match ID:</strong> {currentMatch.match_id?.substring(0, 8)}...</p>
-            <p><strong>Players Connected:</strong> {connectedPlayers.length}</p>
-            <p><strong>Other Players Visible:</strong> <span style={{ color: Object.keys(otherPlayersData).length > 0 ? '#4CAF50' : '#f44336' }}>{Object.keys(otherPlayersData).length}</span></p>
-            <p><strong>My Player ID:</strong> {userSession?.account?.user?.id?.substring(0, 8)}...</p>
+return (
+  <div className="game-container">
+    {/* Enhanced Game Info Overlay */}
+    <div className="game-info-overlay">
+      <p><strong>Game Mode:</strong> {currentMatch ? 'Multiplayer' : 'Single Player'}</p>
+      {currentMatch && (
+        <>
+          <p><strong>Match ID:</strong> {currentMatch.match_id?.substring(0, 8)}...</p>
+          <p><strong>Players Connected:</strong> {connectedPlayers.length}</p>
+          <p><strong>Other Players Visible:</strong> <span style={{ color: Object.keys(otherPlayersData).length > 0 ? '#4CAF50' : '#f44336' }}>{Object.keys(otherPlayersData).length}</span></p>
+          <p><strong>My Player ID:</strong> {userSession?.account?.user?.id?.substring(0, 8)}...</p>
 
-            {Object.keys(otherPlayersData).length > 0 && (
-              <div className="other-players-summary">
-                <p><strong>Other Players:</strong></p>
-                {Object.entries(otherPlayersData).map(([playerId, data]) => (
-                  <div key={playerId} className="other-player-item">
-                    • {data.username || playerId.substring(0, 8)}...
-                    <br />
-                    &nbsp;&nbsp;Pos: ({data.position?.x?.toFixed(1)}, {data.position?.y?.toFixed(1)}, {data.position?.z?.toFixed(1)})
-                    <br />
-                    &nbsp;&nbsp;Last: {Math.floor((Date.now() - data.lastUpdate) / 1000)}s ago
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+          {Object.keys(otherPlayersData).length > 0 && (
+            <div className="other-players-summary">
+              <p><strong>Other Players:</strong></p>
+              {Object.entries(otherPlayersData).map(([playerId, data]) => (
+                <div key={playerId} className="other-player-item">
+                  • {data.username || playerId.substring(0, 8)}...
+                  <br />
+                  &nbsp;&nbsp;Pos: ({data.position?.x?.toFixed(1)}, {data.position?.y?.toFixed(1)}, {data.position?.z?.toFixed(1)})
+                  <br />
+                  &nbsp;&nbsp;Last: {Math.floor((Date.now() - data.lastUpdate) / 1000)}s ago
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
+      <div className="button-group">
+        <button
+          onClick={handleRespawn}
+          className="info-respawn-button"
+        >
+          Respawn
+        </button>
         <button
           onClick={backToMenu}
           className="info-back-button"
@@ -437,31 +435,32 @@ export default function GameCanvas({ userSession }) {
           Back to Menu
         </button>
       </div>
-
-      {/* Game Canvas */}
-      <KeyboardControls map={map}>
-        <Canvas shadows gl={{
-          shadowMap: { enabled: true, type: THREE.UnfiltedShadowMap }
-        }}>
-          <Suspense fallback={null}>
-            <Physics gravity={[0, -9.81, 0]} timeStep={1 / 100} debug>
-              <OrbitControls />
-
-              <GameEnvironment />
-
-              <GameLogic
-                userSession={userSession}
-                currentMatch={currentMatch}
-                dinoRef={dinoRef}
-                dinoRotation={dinoRotation}
-                setDinoRotation={setDinoRotation}
-                otherPlayersData={otherPlayersData}
-              />
-
-            </Physics>
-          </Suspense>
-        </Canvas>
-      </KeyboardControls>
     </div>
-  );
+
+    {/* Game Canvas */}
+    <KeyboardControls map={map}>
+      <Canvas shadows gl={{
+        shadowMap: { enabled: true, type: THREE.UnfiltedShadowMap }
+      }}>
+        <Suspense fallback={null}>
+          <Physics gravity={[0, -9.81, 0]} timeStep={1 / 100}>
+            <OrbitControls />
+
+            <GameEnvironment />
+
+            <GameLogic
+              userSession={userSession}
+              currentMatch={currentMatch}
+              dinoRef={dinoRef}
+              dinoRotation={dinoRotation}
+              setDinoRotation={setDinoRotation}
+              otherPlayersData={otherPlayersData}
+            />
+
+          </Physics>
+        </Suspense>
+      </Canvas>
+    </KeyboardControls>
+  </div>
+);
 }

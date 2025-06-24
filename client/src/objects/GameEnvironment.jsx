@@ -59,7 +59,7 @@ const GameEnvironment = () => {
         type="fixed"
         name="floor"
         interpolate={true}
-        friction={-1}
+        friction={1}
         restitution={0}
       >
         <primitive object={gameMap} scale={mapScale} castShadow receiveShadow={true} />
