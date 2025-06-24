@@ -1,5 +1,5 @@
 import React from 'react';
-import MatchmakingSystem from './MatchmakingSystem';
+import MatchmakingUI from './MatchmakingUI';
 import './styling/GameCanvas.css'; // Import the CSS fileI  
 
 export function MenuUI({ startSinglePlayer, startMultiplayer }) {
@@ -28,7 +28,7 @@ export function MenuUI({ startSinglePlayer, startMultiplayer }) {
   );
 }
 
-export function MatchmakingUI({ userSession, backToMenu, handleMatchFound, handleMatchmakingError }) {
+export function MatchmakingUIWrapper({ userSession, backToMenu, handleMatchFound, handleMatchmakingError }) {
   return (
     <div className="matchmaking-container">
       <button
@@ -38,7 +38,7 @@ export function MatchmakingUI({ userSession, backToMenu, handleMatchFound, handl
         Back to Menu
       </button>
 
-      <MatchmakingSystem
+      <MatchmakingUI
         userSession={userSession}
         onMatchFound={handleMatchFound}
         onMatchmakingError={handleMatchmakingError}

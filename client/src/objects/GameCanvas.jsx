@@ -5,9 +5,9 @@ import { Physics } from '@react-three/rapier';
 import { Dino } from './dino';
 import * as THREE from "three";
 import { CameraRig } from './CameraRig';
-import MatchmakingSystem from './MatchmakingSystem';
+import MatchmakingUI from './MatchmakingUI';
 import GameEnvironment from './GameEnvironment';
-import {MenuUI,MatchmakingUI} from './GameUI';
+import {MenuUI} from './GameUI';
 import './styling/GameCanvas.css'; // Import the CSS fileI  
 
 export const Controls = {
@@ -368,11 +368,10 @@ export default function GameCanvas({ userSession }) {
   if (gameState === 'matchmaking') {
     return (
       <MatchmakingUI
-      userSession={userSession}
-      backToMenu={backToMenu}
-      handleMatchFound={handleMatchFound}
-      handleMatchmakingError={handleMatchmakingError}
-    />
+        userSession={userSession}
+        onMatchFound={handleMatchFound}
+        onMatchmakingError={handleMatchmakingError}
+      />
     );
   }
 const handleRespawn = () => {
