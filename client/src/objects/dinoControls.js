@@ -130,8 +130,15 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         // Handle diagonal movement - face the actual movement direction
         if ((forwardPressed || backPressed) && (leftPressed || rightPressed)) {
             let diagonalRotation = cameraRotation;
-            
-            if (forwardPressed && leftPressed) {
+            if(forwardPressed && (leftPressed && rightPressed)) {
+                // If both left and right are pressed with forward, no diagonal movement
+                diagonalRotation = cameraRotation + Math.PI;
+            }
+            else if (backPressed && (leftPressed && rightPressed)) {
+                // If both left and right are pressed with backward, no diagonal movement
+                diagonalRotation = cameraRotation;
+            }
+            else if (forwardPressed && leftPressed) {
                 // Forward + Left = 45° left of forward
                 diagonalRotation = cameraRotation + Math.PI + Math.PI / 4;
             } else if (forwardPressed && rightPressed) {

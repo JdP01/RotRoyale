@@ -442,7 +442,7 @@ return (
         shadowMap: { enabled: true, type: THREE.UnfiltedShadowMap }
       }}>
         <Suspense fallback={null}>
-          <Physics gravity={[0, -9.81, 0]} timeStep={1 / 100}>
+          <Physics gravity={[0, -9.81, 0]} timeStep={1 / 100} debug>
             <OrbitControls />
 
             <GameEnvironment />
