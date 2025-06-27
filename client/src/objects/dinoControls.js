@@ -45,6 +45,8 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     const sensitivity = 0.002;
 
     // Pointer lock setup
+    // Replace both the onMouseDown function and the separate shooting useEffect with this single handler:
+
     useEffect(() => {
         const canvas = document.querySelector('canvas');
         if (!canvas) return;
@@ -70,9 +72,34 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             }
         };
 
-        const onClick = () => {
-            if (document.pointerLockElement !== canvas) {
-                canvas.requestPointerLock();
+        // COMBINED mouse handler - handles both pointer lock AND shooting
+        const onMouseDown = (event) => {
+            if (event.button === 0) { // Left mouse button
+                if (document.pointerLockElement !== canvas) {
+                    // Not locked yet - request pointer lock
+                    canvas.requestPointerLock();
+                } else {
+                    // Already locked - handle shooting
+                    console.log("Direct mouse click - SHOOTING!");
+                    
+                    // Simple raycast from gun position
+                    if (bodyRef.current) {
+                        const playerPosition = bodyRef.current.translation();
+                        
+                        const gunOffset = new THREE.Vector3(-0.5, 1.5, 0.5);
+                        const gunWorldPosition = new THREE.Vector3(
+                            playerPosition.x + gunOffset.x,
+                            playerPosition.y + gunOffset.y,
+                            playerPosition.z + gunOffset.z
+                        );
+                        
+                        const rayDirection = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraRotation);
+                        
+                        console.log("Shooting ray from:", gunWorldPosition);
+                        console.log("Ray direction:", rayDirection);
+                        console.log("Ray range: 100 units forward");
+                    }
+                }
             }
         };
 
@@ -80,27 +107,18 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         document.addEventListener('pointerlockchange', onPointerLockChange);
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('keydown', onKeyDown);
-        canvas.addEventListener('click', onClick);
+        canvas.addEventListener('mousedown', onMouseDown);
 
         // Cleanup
         return () => {
             document.removeEventListener('pointerlockchange', onPointerLockChange);
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('keydown', onKeyDown);
-            canvas.removeEventListener('click', onClick);
+            canvas.removeEventListener('mousedown', onMouseDown);
         };
-    }),
-    useEffect(() => {
-    const handleMouseClick = (event) => {
-        if (event.button === 0 && document.pointerLockElement) {
-            console.log("Direct mouse click - SHOOTING!");
-        }
-    };
+    }, []); // Add cameraRotation to dependencies
 
-    document.addEventListener('mousedown', handleMouseClick);
-    return () => document.removeEventListener('mousedown', handleMouseClick);
-}, 
-     []);
+// REMOVE the separate shooting useEffect completely - delete lines ~113-120
     
     const handleMovement = (delta, setIsMoving, setIsSprinting) => { 
         dir.set(0, 0, 0);
