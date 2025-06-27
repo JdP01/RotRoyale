@@ -14,7 +14,8 @@ export const Controls = {
   left: "left",
   right: "right",
   jump: "jump",
-  sprint: "sprint"
+  sprint: "sprint",
+  //shoot: "shoot"
 }
 
 export const OtherPlayer = ({ playerData, userSession }) => {
@@ -273,6 +274,7 @@ export default function GameCanvas({
     { name: Controls.right, keys: ["KeyD"] },
     { name: Controls.jump, keys: ["Space"] },
     { name: Controls.sprint, keys: ["Shift"] },
+    
   ], []);
 
   const handleRespawn = () => {

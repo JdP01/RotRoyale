@@ -37,6 +37,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     const leftPressed = useKeyboardControls((state) => state[Controls.left]);
     const rightPressed = useKeyboardControls((state) => state[Controls.right]);
     const sprintPressed = useKeyboardControls((state) => state[Controls.sprint]);
+    //const shootPressed = useKeyboardControls((state) => state[Controls.shoot]);
     
     const dir = new THREE.Vector3();
     const [cameraRotation, setCameraRotation] = useState(0); // Camera/mouse rotation
@@ -88,7 +89,18 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             document.removeEventListener('keydown', onKeyDown);
             canvas.removeEventListener('click', onClick);
         };
-    }, []);
+    }),
+    useEffect(() => {
+    const handleMouseClick = (event) => {
+        if (event.button === 0 && document.pointerLockElement) {
+            console.log("Direct mouse click - SHOOTING!");
+        }
+    };
+
+    document.addEventListener('mousedown', handleMouseClick);
+    return () => document.removeEventListener('mousedown', handleMouseClick);
+}, 
+     []);
     
     const handleMovement = (delta, setIsMoving, setIsSprinting) => { 
         dir.set(0, 0, 0);
@@ -126,7 +138,6 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             // Face right direction
             targetCharacterRotation = cameraRotation + Math.PI / 2;
         }
-        
         // Handle diagonal movement - face the actual movement direction
         if ((forwardPressed || backPressed) && (leftPressed || rightPressed)) {
             let diagonalRotation = cameraRotation;

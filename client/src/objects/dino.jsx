@@ -188,9 +188,10 @@ export const Dino = ({
 
                 <primitive object={models.Body} position={[0, 0, 0]}  metalness={0} roughness={1}/>
                 
-                <CuboidCollider args = {[0.4,1,1]} position={[2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>
-                <CuboidCollider args = {[0.4,1,1]} position={[-2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>
-
+               {/*} <CuboidCollider args = {[0.4,1,1]} position={[2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>
+                <CuboidCollider args = {[0.4,1,1]} position={[-2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>*/}
+                <CapsuleCollider args={[1, 0.4]} position={[0,2,8]} restitution={0} friction={0.2} />
+                <CapsuleCollider args={[1, 0.4]} position={[0,2,0]} restitution={0} friction={0.2} />
                 <group ref={headRef} position={[0, 2.2, 1.3]} >
                     <primitive object={models.Head} />
                 </group>
