@@ -6,6 +6,9 @@ import { Dino } from './dino';
 import * as THREE from "three";
 import { CameraRig } from './CameraRig';
 import GameEnvironment from './GameEnvironment';
+import { PlayerUI } from './PlayerUI';
+import { usePlayerState } from '../game/PlayerState';
+import RaycastVisualizer from './RaycastVisualizer';
 //import './styling/GameCanvas.css'; // Import the CSS file  
 
 export const Controls = {
@@ -45,6 +48,9 @@ const GameLogic = ({
   otherPlayersData
 }) => {
   const lastSentTime = useRef(0);
+  
+  // Get raycast visualization state
+  const { raycastVisible, raycastStart, raycastEnd } = usePlayerState();
 
   // Send player position updates
   useFrame(() => {
@@ -127,6 +133,14 @@ const GameLogic = ({
         stiffness={0.1}
         lookStiffness={0.12}
       />
+
+      {/* Raycast Visualizer */}
+      <RaycastVisualizer
+        isVisible={raycastVisible}
+        startPosition={raycastStart}
+        endPosition={raycastEnd}
+        duration={1500}
+      />
     </>
   );
 };
@@ -142,6 +156,9 @@ export default function GameCanvas({
 }) {
   const [dinoRotation, setDinoRotation] = useState(0);
   const dinoRef = useRef(null);
+  
+  // Get player state for respawn functionality
+  const { reset: resetPlayerState } = usePlayerState();
 
   // Enhanced socket event handling
   useEffect(() => { //Listens actively for changes in userSession, only runs when userSession changes
@@ -290,12 +307,18 @@ export default function GameCanvas({
       setDinoRotation(0);
       dinoRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
       
+      // Reset player health and stamina
+      resetPlayerState();
+      
       console.log("Player respawned at:", spawnPosition);
     }
   };
 
   return (
     <div className="game-container">
+      {/* Player Health/Stamina UI */}
+      <PlayerUI />
+      
       {/* Enhanced Game Info Overlay */}
       <div className="game-info-overlay">
         <p><strong>Game Mode:</strong> {currentMatch ? 'Multiplayer' : 'Single Player'}</p>
@@ -345,7 +368,7 @@ export default function GameCanvas({
           shadowMap: { enabled: true, type: THREE.UnfiltedShadowMap }
         }}>
           <Suspense fallback={null}>
-            <Physics gravity={[0, -9.81, 0]} timeStep={1 / 100} debug>
+            <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300} debug>
               <OrbitControls />
 
               <GameEnvironment />

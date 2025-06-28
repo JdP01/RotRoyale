@@ -1,10 +1,18 @@
 import { useKeyboardControls } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 import * as THREE from "three";
 import { Controls } from "./GameCanvas";
 import { useEffect, useRef, useState } from 'react';
+import { usePlayerState } from "../game/PlayerState";
 
 export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     const [isInJumpAction, setIsInJumpAction] = useState(false);
+    
+    // Get camera reference
+    const { camera } = useThree();
+    
+    // Get player state for stamina management
+    const { stamina, isExhausted, consumeStamina, regenerateStamina, fireRaycast } = usePlayerState();
 
     // Movement controls 
     const jump = () => {
@@ -80,24 +88,41 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
                     canvas.requestPointerLock();
                 } else {
                     // Already locked - handle shooting
-                    console.log("Direct mouse click - SHOOTING!");
+                    console.log("🔫 SHOOTING!");
                     
                     // Simple raycast from gun position
-                    if (bodyRef.current) {
+                    if (bodyRef.current && camera) {
                         const playerPosition = bodyRef.current.translation();
                         
-                        const gunOffset = new THREE.Vector3(-0.5, 1.5, 0.5);
+                        // Gun offset relative to player (need to rotate this based on character rotation)
+                        const gunOffsetLocal = new THREE.Vector3(-0.5, 1.5, 0.5);
+                        
+                        // Rotate the gun offset based on the character's rotation
+                        const rotatedGunOffset = gunOffsetLocal.clone();
+                        rotatedGunOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
+                        
+                        // Calculate final gun world position
                         const gunWorldPosition = new THREE.Vector3(
-                            playerPosition.x + gunOffset.x,
-                            playerPosition.y + gunOffset.y,
-                            playerPosition.z + gunOffset.z
+                            playerPosition.x + rotatedGunOffset.x,
+                            playerPosition.y + rotatedGunOffset.y,
+                            playerPosition.z + rotatedGunOffset.z
                         );
                         
-                        const rayDirection = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraRotation);
+                        // Get camera's actual forward direction
+                        const cameraDirection = new THREE.Vector3();
+                        camera.getWorldDirection(cameraDirection);
                         
-                        console.log("Shooting ray from:", gunWorldPosition);
-                        console.log("Ray direction:", rayDirection);
-                        console.log("Ray range: 100 units forward");
+                        // Cast ray in camera direction
+                        const rayEnd = gunWorldPosition.clone().add(cameraDirection.clone().multiplyScalar(100));
+                        
+                        console.log(`📍 Shooting from: (${gunWorldPosition.x.toFixed(1)}, ${gunWorldPosition.y.toFixed(1)}, ${gunWorldPosition.z.toFixed(1)})`);
+                        console.log(`🎯 Ray to: (${rayEnd.x.toFixed(1)}, ${rayEnd.y.toFixed(1)}, ${rayEnd.z.toFixed(1)})`);
+                        console.log(`🧭 Camera direction: (${cameraDirection.x.toFixed(2)}, ${cameraDirection.y.toFixed(2)}, ${cameraDirection.z.toFixed(2)})`);
+                        console.log(`🔄 Character rotation: ${characterRotation.toFixed(2)} rad`);
+                        console.log(`📏 Range: 100 units forward`);
+                        
+                        // Trigger raycast visualization
+                        fireRaycast(gunWorldPosition, rayEnd);
                     }
                 }
             }
@@ -116,13 +141,17 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             document.removeEventListener('keydown', onKeyDown);
             canvas.removeEventListener('mousedown', onMouseDown);
         };
-    }, []); // Add cameraRotation to dependencies
+    }, [camera]); // Update dependencies to include camera
 
 // REMOVE the separate shooting useEffect completely - delete lines ~113-120
     
     const handleMovement = (delta, setIsMoving, setIsSprinting) => { 
         dir.set(0, 0, 0);
         let moving = false;
+        let sprinting = false;
+        
+        // Check if can sprint (need stamina and not exhausted)
+        const canSprint = sprintPressed && stamina > 10 && !isExhausted;
         
         // Calculate forward and right vectors based on camera rotation (for movement)
         const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraRotation);
@@ -137,6 +166,12 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             moving = true;
             // Face forward direction
             targetCharacterRotation = cameraRotation + Math.PI;
+            
+            if (canSprint) {
+                sprinting = true;
+                // Consume stamina while sprinting
+                consumeStamina(50 * delta); // 50 stamina per second
+            }
         }
         if (backPressed) {
             dir.sub(forward);
@@ -156,6 +191,13 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             // Face right direction
             targetCharacterRotation = cameraRotation + Math.PI / 2;
         }
+        
+        // Regenerate stamina when not sprinting
+        if (!sprinting && stamina < 100) {
+            regenerateStamina(25 * delta); // 25 stamina per second
+        }
+        
+        // ...existing code for diagonal movement...
         // Handle diagonal movement - face the actual movement direction
         if ((forwardPressed || backPressed) && (leftPressed || rightPressed)) {
             let diagonalRotation = cameraRotation;
@@ -202,12 +244,12 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
 
         
         setIsMoving(moving);
-        setIsSprinting(sprintPressed && moving);
+        setIsSprinting(sprinting && !isExhausted); // Only sprint if not exhausted
         
         if (moving) {
             // Normalize direction and apply speed
             dir.normalize();
-            const moveSpeed = (sprintPressed && moving) ? 15 : 10;
+            const moveSpeed = (sprinting && !isExhausted) ? 15 : 10; // Fast if sprinting and not exhausted
             dir.multiplyScalar(moveSpeed);
         }
 

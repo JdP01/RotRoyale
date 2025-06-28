@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { useDinoAnimations } from "./dinoAnimations";
 import { useDinoControls } from "./dinoControls";
+import { usePlayerState } from "../game/PlayerState";
 
 export const Dino = ({ 
     ref: bodyRef, 
@@ -89,6 +90,12 @@ export const Dino = ({
 
     // Only use controls if not a networked player
     const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, isOnFloor, setIsJumping) : null;
+    
+    // Get player state for health/stamina (only for local player)
+    const { takeDamage } = !isNetworkedPlayer ? usePlayerState() : { takeDamage: () => {} };
+    
+    // Store previous velocity to detect hard landings
+    const previousVelocity = useRef({ x: 0, y: 0, z: 0 });
 
     // Game Frame Loop 
     useFrame((_, delta) => { 
@@ -97,6 +104,11 @@ export const Dino = ({
         if (!isNetworkedPlayer) {
             // Handle local player controls
             controls.handleMovement(delta, setIsMoving, setIsSprinting);
+            
+            // Store velocity for fall damage detection
+            if (bodyRef.current) {
+                previousVelocity.current = bodyRef.current.linvel();
+            }
         } else {
             // Interpolate networked player position and rotation
             currentPosition.current.lerp(targetPosition, lerpFactor);
@@ -169,6 +181,18 @@ export const Dino = ({
                 if (other.rigidBodyObject.name === "floor") {
                     isOnFloor.current = true;
                     setIsJumping(false); // Reset jumping when landing
+                    
+                    // Check for fall damage (only for local player)
+                    if (!isNetworkedPlayer && bodyRef.current) {
+                        const currentVelocity = bodyRef.current.linvel();
+                        const fallSpeed = Math.abs(previousVelocity.current.y);
+                        
+                        // If falling fast (adjust threshold as needed)
+                        if (fallSpeed > 15) {
+                            const damage = Math.floor((fallSpeed - 10) * 2); // Scale damage
+                            takeDamage(damage, 'fall');
+                        }
+                    }
                 }
             }}
             onCollisionExit={({other}) => { 
@@ -188,10 +212,9 @@ export const Dino = ({
 
                 <primitive object={models.Body} position={[0, 0, 0]}  metalness={0} roughness={1}/>
                 
-               {/*} <CuboidCollider args = {[0.4,1,1]} position={[2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>
-                <CuboidCollider args = {[0.4,1,1]} position={[-2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>*/}
-                <CapsuleCollider args={[1, 0.4]} position={[0,2,8]} restitution={0} friction={0.2} />
-                <CapsuleCollider args={[1, 0.4]} position={[0,2,0]} restitution={0} friction={0.2} />
+                <CuboidCollider args = {[0.4,1,1]} position={[2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>
+                <CuboidCollider args = {[0.4,1,1]} position={[-2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>
+
                 <group ref={headRef} position={[0, 2.2, 1.3]} >
                     <primitive object={models.Head} />
                 </group>
