@@ -94,18 +94,12 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
                     if (bodyRef.current && camera) {
                         const playerPosition = bodyRef.current.translation();
                         
-                        // Gun offset relative to player (need to rotate this based on character rotation)
-                        const gunOffsetLocal = new THREE.Vector3(-0.5, 1.5, 0.5);
-                        
-                        // Rotate the gun offset based on the character's rotation
-                        const rotatedGunOffset = gunOffsetLocal.clone();
-                        rotatedGunOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
-                        
-                        // Calculate final gun world position
+                        // Gun offset relative to player
+                        const gunOffset = new THREE.Vector3(-0.5, 1.5, 0.5);
                         const gunWorldPosition = new THREE.Vector3(
-                            playerPosition.x + rotatedGunOffset.x,
-                            playerPosition.y + rotatedGunOffset.y,
-                            playerPosition.z + rotatedGunOffset.z
+                            playerPosition.x + gunOffset.x,
+                            playerPosition.y + gunOffset.y,
+                            playerPosition.z + gunOffset.z
                         );
                         
                         // Get camera's actual forward direction
@@ -118,7 +112,6 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
                         console.log(`📍 Shooting from: (${gunWorldPosition.x.toFixed(1)}, ${gunWorldPosition.y.toFixed(1)}, ${gunWorldPosition.z.toFixed(1)})`);
                         console.log(`🎯 Ray to: (${rayEnd.x.toFixed(1)}, ${rayEnd.y.toFixed(1)}, ${rayEnd.z.toFixed(1)})`);
                         console.log(`🧭 Camera direction: (${cameraDirection.x.toFixed(2)}, ${cameraDirection.y.toFixed(2)}, ${cameraDirection.z.toFixed(2)})`);
-                        console.log(`🔄 Character rotation: ${characterRotation.toFixed(2)} rad`);
                         console.log(`📏 Range: 100 units forward`);
                         
                         // Trigger raycast visualization
