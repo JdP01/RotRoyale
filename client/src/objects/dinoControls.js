@@ -95,7 +95,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
                         const playerPosition = bodyRef.current.translation();
                         
                         // Gun offset relative to player
-                        const gunOffset = new THREE.Vector3(-0.5, 1.5, 0.5);
+                        const gunOffset = new THREE.Vector3(0.2, 1, -2);
                         const gunWorldPosition = new THREE.Vector3(
                             playerPosition.x + gunOffset.x,
                             playerPosition.y + gunOffset.y,
