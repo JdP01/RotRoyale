@@ -22,8 +22,6 @@ export const usePlayerState = create((set, get) => ({
     const currentHealth = get().health;
     const newHealth = Math.max(0, currentHealth - amount);
     
-    console.log(`💔 Player took ${amount} damage from ${source}. Health: ${currentHealth} → ${newHealth}`);
-    
     set({ 
       health: newHealth,
       isDead: newHealth <= 0
@@ -48,9 +46,7 @@ export const usePlayerState = create((set, get) => ({
       stamina: newStamina,
       isExhausted: newStamina <= 5 // Exhausted when stamina is very low
     });
-    
-    console.log(`⚡ Consumed ${amount} stamina. Stamina: ${currentStamina} → ${newStamina}`);
-  },
+    },
   
   regenerateStamina: (amount) => {
     const { stamina, maxStamina } = get();

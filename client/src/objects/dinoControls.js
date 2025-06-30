@@ -95,13 +95,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
                         const offsetDirection = cameraDirection.clone().applyMatrix4(verticalRotation);
                         
                         // Cast ray in offset direction
-                        const rayEnd = gunWorldPosition.clone().add(offsetDirection.clone().multiplyScalar(100));
-                        
-                        console.log(`📍 Shooting from: (${gunWorldPosition.x.toFixed(1)}, ${gunWorldPosition.y.toFixed(1)}, ${gunWorldPosition.z.toFixed(1)})`);
-                        console.log(`🎯 Ray to: (${rayEnd.x.toFixed(1)}, ${rayEnd.y.toFixed(1)}, ${rayEnd.z.toFixed(1)})`);
-                        console.log(`🧭 Camera direction: (${cameraDirection.x.toFixed(2)}, ${cameraDirection.y.toFixed(2)}, ${cameraDirection.z.toFixed(2)})`);
-                        console.log(`📏 Range: 100 units forward`);
-                        
+                        const rayEnd = gunWorldPosition.clone().add(offsetDirection.clone().multiplyScalar(100))
                         // Trigger raycast visualization
                         fireRaycast(gunWorldPosition, rayEnd);
                     }
