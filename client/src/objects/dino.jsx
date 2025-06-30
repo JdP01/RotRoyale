@@ -188,8 +188,8 @@ export const Dino = ({
                         const fallSpeed = Math.abs(previousVelocity.current.y);
                         
                         // If falling fast (adjust threshold as needed)
-                        if (fallSpeed > 15) {
-                            const damage = Math.floor((fallSpeed - 10) * 2); // Scale damage
+                        if (fallSpeed > 20) {
+                            const damage = (fallSpeed - 20) * 1/2; // Scale damage
                             takeDamage(damage, 'fall');
                         }
                     }
@@ -202,7 +202,7 @@ export const Dino = ({
             }}
             enabledRotations={[false, false, false]}
             type="dynamic"
-            colliders = "hull"
+            colliders = {false} 
             interpolate={true}
             gravityScale={5}
             friction={0}
@@ -211,10 +211,10 @@ export const Dino = ({
             <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, Math.PI, 0]} >
 
                 <primitive object={models.Body} position={[0, 0, 0]}  metalness={0} roughness={1}/>
-                
-                <CuboidCollider args = {[0.4,1,1]} position={[2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>
-                <CuboidCollider args = {[0.4,1,1]} position={[-2.3,2.46,4.2]} rotation={[0.8,0,0]} restitution={0}/>
-
+            
+                <CapsuleCollider args={[1, 1.5]} position={[0, 4.55, 2.2]} rotation={[0.8, 0, 0]} restitution={0} />
+                <CapsuleCollider args ={[0.8,0.3]} position ={[0,5,-5.3]} rotation = {[-1, 0, 0]} restitution={0} />
+                <CuboidCollider args={[0.77, 0.6, 1.3]} position={[0, 8.6, 4.2]} rotation={[0, 0, 0]} restitution={0}/>
                 <group ref={headRef} position={[0, 2.2, 1.3]} >
                     <primitive object={models.Head} />
                 </group>

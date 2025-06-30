@@ -6,8 +6,6 @@ import { useEffect, useRef, useState } from 'react';
 import { usePlayerState } from "../game/PlayerState";
 
 export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
-    const [isInJumpAction, setIsInJumpAction] = useState(false);
-    
     // Get camera reference
     const { camera } = useThree();
     
@@ -18,26 +16,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     const jump = () => {
         bodyRef.current.applyImpulse({x: 0, y: 25, z: 0});
         setIsJumping(true);
-        setIsInJumpAction(true);
     }
-
-    useEffect(() => {
-        let frameCount = 0;
-        
-        const checkLanding = () => {
-            if (isInJumpAction) {
-                const vel = bodyRef.current.linvel();
-                // Only reset jump state when we're moving downward and near ground
-                if (vel.y <= 0 && isOnFloor.current) {
-                    setIsInJumpAction(false);
-                    setIsJumping(false);
-                }
-            }
-        };
-
-        const interval = setInterval(checkLanding, 16);
-        return () => clearInterval(interval);
-    }, [isInJumpAction]);
 
     const jumpPressed = useKeyboardControls((state) => state[Controls.jump]);
     const forwardPressed = useKeyboardControls((state) => state[Controls.forward]);
@@ -71,7 +50,9 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             if (document.pointerLockElement !== canvas) return;
             
             // Update camera rotation based on horizontal mouse movement
+        
             setCameraRotation(prev => prev - event.movementX * sensitivity);
+            //setCharacterRotation(prev => prev - event.movementX * sensitivity);
         };
 
         const onKeyDown = (event) => {
@@ -84,7 +65,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         const onMouseDown = (event) => {
             if (event.button === 0) { // Left mouse button
                 if (document.pointerLockElement !== canvas) {
-                    // Not locked yet - request pointer lock
+                    // Not locked yet - request pointer locsk
                     canvas.requestPointerLock();
                 } else {
                     // Already locked - handle shooting
@@ -106,8 +87,15 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
                         const cameraDirection = new THREE.Vector3();
                         camera.getWorldDirection(cameraDirection);
                         
-                        // Cast ray in camera direction
-                        const rayEnd = gunWorldPosition.clone().add(cameraDirection.clone().multiplyScalar(100));
+                        // Add vertical offset relative to camera orientation
+                        const cameraUp = new THREE.Vector3(0, 1, 0);
+                        const cameraRight = new THREE.Vector3().crossVectors(cameraDirection, cameraUp).normalize();
+                        const verticalOffset = Math.PI / 11; // 15 degrees upward
+                        const verticalRotation = new THREE.Matrix4().makeRotationAxis(cameraRight, verticalOffset);
+                        const offsetDirection = cameraDirection.clone().applyMatrix4(verticalRotation);
+                        
+                        // Cast ray in offset direction
+                        const rayEnd = gunWorldPosition.clone().add(offsetDirection.clone().multiplyScalar(100));
                         
                         console.log(`📍 Shooting from: (${gunWorldPosition.x.toFixed(1)}, ${gunWorldPosition.y.toFixed(1)}, ${gunWorldPosition.z.toFixed(1)})`);
                         console.log(`🎯 Ray to: (${rayEnd.x.toFixed(1)}, ${rayEnd.y.toFixed(1)}, ${rayEnd.z.toFixed(1)})`);
@@ -231,8 +219,9 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             setCharacterRotation(newRotation);
         }
         
-        if (jumpPressed && !isInJumpAction && isOnFloor.current) {
+        if (jumpPressed && isOnFloor.current) {
             jump();
+            console.log("🦖 Jumping!");
         }
 
         
