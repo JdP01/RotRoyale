@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useState, useRef, useEffect } from 'react';
+import React, { Suspense, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Box, KeyboardControls, OrbitControls, Sky } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
@@ -49,8 +49,218 @@ const GameLogic = ({
 }) => {
   const lastSentTime = useRef(0);
   
-  // Get raycast visualization state
-  const { raycastVisible, raycastStart, raycastEnd } = usePlayerState();
+  // Get raycast visualization state and player state functions
+  const { raycastVisible, raycastStart, raycastEnd, enemyRaycastVisible, enemyRaycastStart, enemyRaycastEnd, setBroadcastCallback, takeDamage, showEnemyRaycast } = usePlayerState();
+
+  // Set up broadcast callback for sending game events to server
+  useEffect(() => {
+    if (currentMatch && userSession?.socket) {
+      const broadcastGameEvent = (eventData) => {
+        try {
+          const socket = userSession.socket;
+          const matchId = currentMatch.match_id;
+          const opCode = 2; // Different op code for game events vs position updates
+          
+          const gameEvent = {
+            ...eventData,
+            playerId: userSession.account.user.id,
+            username: userSession.account.user.username || userSession.username || 'Unknown Player',
+          };
+          
+          const data = JSON.stringify(gameEvent);
+          
+          console.log('🌐 Broadcasting game event:', gameEvent);
+          
+          if (typeof socket.sendMatchData === 'function') {
+            socket.sendMatchData(matchId, opCode, data);
+          } else if (typeof socket.sendMatchState === 'function') {
+            socket.sendMatchState(matchId, opCode, data);
+          } else if (typeof socket.sendData === 'function') {
+            socket.sendData(matchId, opCode, data);
+          } else if (typeof socket.send === 'function') {
+            socket.send({
+              match_data_send: {
+                match_id: matchId,
+                op_code: opCode,
+                data: data
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Error broadcasting game event:", error);
+        }
+      };
+      
+      setBroadcastCallback(broadcastGameEvent);
+    }
+    
+    return () => {
+      setBroadcastCallback(null);
+    };
+  }, [currentMatch, userSession, setBroadcastCallback]);
+
+  // Handle hit detection for incoming raycast shots
+  const handleRaycastHit = useCallback((raycastData) => {
+    if (!dinoRef.current || !raycastData.startPosition || !raycastData.endPosition) return;
+    
+    // Show visual representation of enemy's shot
+    showEnemyRaycast(raycastData.startPosition, raycastData.endPosition);
+    
+    // Create THREE.js Raycaster for precise mesh collision detection
+    const raycaster = new THREE.Raycaster();
+    
+    // Set up ray from start position towards end position
+    const rayStart = new THREE.Vector3(
+      raycastData.startPosition.x,
+      raycastData.startPosition.y,
+      raycastData.startPosition.z
+    );
+    const rayEnd = new THREE.Vector3(
+      raycastData.endPosition.x,
+      raycastData.endPosition.y,
+      raycastData.endPosition.z
+    );
+    
+    const rayDirection = rayEnd.clone().sub(rayStart).normalize();
+    const rayDistance = rayStart.distanceTo(rayEnd);
+    
+    raycaster.set(rayStart, rayDirection);
+    raycaster.far = rayDistance; // Limit ray to the shot distance
+    
+    // Get all dino meshes - access Three.js objects properly
+    const dinoMeshes = [];
+    const playerPosition = dinoRef.current.translation();
+    const playerPos = new THREE.Vector3(playerPosition.x, playerPosition.y, playerPosition.z);
+    
+    console.log(`🔍 Player position: (${playerPosition.x.toFixed(2)}, ${playerPosition.y.toFixed(2)}, ${playerPosition.z.toFixed(2)})`);
+    
+    // The physics body doesn't have traverse - we need to access the Three.js children directly
+    // Get the Three.js object from the physics body
+    const physicsBodyChildren = dinoRef.current.children || [];
+    console.log(`🔍 Physics body children count: ${physicsBodyChildren.length}`);
+    
+    // Method 1: Search through physics body children (Three.js objects)
+    physicsBodyChildren.forEach((child, index) => {
+      console.log(`📦 Physics body child ${index}:`, child.type, child.name || 'unnamed');
+      
+      if (child.traverse) {
+        child.traverse((subChild) => {
+          console.log(`  📦 Sub-child:`, subChild.type, subChild.name || 'unnamed', subChild.isMesh ? 'MESH' : '');
+          if (subChild.isMesh && subChild.geometry) {
+            const meshWorldPosition = new THREE.Vector3();
+            subChild.getWorldPosition(meshWorldPosition);
+            console.log(`    📍 Mesh world position: (${meshWorldPosition.x.toFixed(2)}, ${meshWorldPosition.y.toFixed(2)}, ${meshWorldPosition.z.toFixed(2)})`);
+            
+            const distance = meshWorldPosition.distanceTo(playerPos);
+            console.log(`    📏 Distance to player: ${distance.toFixed(2)}`);
+            
+            if (distance < 10) {
+              dinoMeshes.push(subChild);
+              console.log(`    ✅ Added mesh to hit detection array`);
+            }
+          }
+        });
+      } else if (child.isMesh && child.geometry) {
+        // Direct mesh child
+        const meshWorldPosition = new THREE.Vector3();
+        child.getWorldPosition(meshWorldPosition);
+        const distance = meshWorldPosition.distanceTo(playerPos);
+        console.log(`  � Direct mesh at distance: ${distance.toFixed(2)}`);
+        
+        if (distance < 10) {
+          dinoMeshes.push(child);
+          console.log(`  ✅ Added direct mesh to hit detection array`);
+        }
+      }
+    });
+    
+    console.log(`🔍 Found ${dinoMeshes.length} meshes from physics body children`);
+    
+    // Method 2: If still no meshes, search the scene more broadly
+    if (dinoMeshes.length === 0) {
+      console.log(`🔍 No meshes found in physics body, searching scene...`);
+      
+      // Get the scene by traversing up from the physics body
+      let currentNode = dinoRef.current.parent;
+      while (currentNode && currentNode.type !== 'Scene') {
+        currentNode = currentNode.parent;
+      }
+      
+      if (currentNode && currentNode.traverse) {
+        console.log(`🔍 Found scene, searching for meshes near player...`);
+        currentNode.traverse((child) => {
+          if (child.isMesh && child.geometry) {
+            const meshWorldPosition = new THREE.Vector3();
+            child.getWorldPosition(meshWorldPosition);
+            
+            const distance = meshWorldPosition.distanceTo(playerPos);
+            if (distance < 8) { // Close to player
+              console.log(`🔍 Scene mesh found at distance ${distance.toFixed(2)}:`, child.name || 'unnamed', child.type);
+              dinoMeshes.push(child);
+            }
+          }
+        });
+      }
+      console.log(`🔍 Scene search added ${dinoMeshes.length} meshes`);
+    }
+    
+    console.log(`🎯 Final mesh count for ray testing: ${dinoMeshes.length}`);
+    
+    // Test ray intersection against all found meshes
+    if (dinoMeshes.length > 0) {
+      console.log(`🎯 Testing raycast intersection against ${dinoMeshes.length} meshes...`);
+      const intersections = raycaster.intersectObjects(dinoMeshes, true);
+      
+      console.log(`🎯 Raycast intersections found: ${intersections.length}`);
+      
+      if (intersections.length > 0) {
+        const hitPoint = intersections[0].point;
+        const hitDistance = rayStart.distanceTo(hitPoint);
+        const hitObject = intersections[0].object;
+        
+        console.log(`💥 DIRECT HIT! Dino mesh hit by raycast from ${raycastData.username}!`);
+        console.log(`Hit point: (${hitPoint.x.toFixed(2)}, ${hitPoint.y.toFixed(2)}, ${hitPoint.z.toFixed(2)})`);
+        console.log(`Hit distance: ${hitDistance.toFixed(2)} units`);
+        console.log(`Hit object:`, hitObject.name || 'unnamed mesh', hitObject.type);
+        
+        takeDamage(raycastData.damage || 25, `shot by ${raycastData.username}`);
+        return true;
+      } else {
+        console.log(`🎯 Shot from ${raycastData.username} missed - no mesh intersection detected`);
+        console.log(`Ray details: start(${rayStart.x.toFixed(2)}, ${rayStart.y.toFixed(2)}, ${rayStart.z.toFixed(2)}) end(${rayEnd.x.toFixed(2)}, ${rayEnd.y.toFixed(2)}, ${rayEnd.z.toFixed(2)})`);
+      }
+    }
+    
+    // Always use fallback detection since mesh detection might be unreliable
+    console.log(`🎯 Using position-based fallback detection...`);
+    const fallbackRadius = 1.2; // Reasonable radius for hit detection
+    const rayLength = rayStart.distanceTo(rayEnd);
+    const playerToRayStart = playerPos.clone().sub(rayStart);
+    const projectionLength = playerToRayStart.dot(rayDirection);
+    const clampedProjection = Math.max(0, Math.min(rayLength, projectionLength));
+    const closestPoint = rayStart.clone().add(rayDirection.clone().multiplyScalar(clampedProjection));
+    
+    const distanceToRay = playerPos.distanceTo(closestPoint);
+    console.log(`Fallback: distance to ray = ${distanceToRay.toFixed(2)}, threshold = ${fallbackRadius}`);
+    
+    if (distanceToRay <= fallbackRadius) {
+      console.log(`💥 Player hit by raycast from ${raycastData.username} (fallback detection)! Distance: ${distanceToRay.toFixed(2)}`);
+      takeDamage(raycastData.damage || 25, `shot by ${raycastData.username}`);
+      return true;
+    }
+    
+    console.log(`🎯 Shot from ${raycastData.username} missed - distance: ${distanceToRay.toFixed(2)}`);
+    return false;
+  }, [dinoRef, takeDamage, showEnemyRaycast]);
+
+  // Set up global handler for incoming raycast events
+  useEffect(() => {
+    window.handleIncomingRaycast = handleRaycastHit;
+    
+    return () => {
+      window.handleIncomingRaycast = null;
+    };
+  }, [handleRaycastHit]);
 
   // Send player position updates
   useFrame(() => {
@@ -134,12 +344,21 @@ const GameLogic = ({
         lookStiffness={0.12}
       />
 
-      {/* Raycast Visualizer */}
+      {/* Raycast Visualizer for player's own shots */}
       <RaycastVisualizer
         isVisible={raycastVisible}
         startPosition={raycastStart}
         endPosition={raycastEnd}
         duration={1500}
+      />
+      
+      {/* Raycast Visualizer for enemy shots */}
+      <RaycastVisualizer
+        isVisible={enemyRaycastVisible}
+        startPosition={enemyRaycastStart}
+        endPosition={enemyRaycastEnd}
+        duration={1000}
+        color="orange" // Different color to distinguish enemy shots
       />
     </>
   );
@@ -198,29 +417,42 @@ export default function GameCanvas({
 
         console.log("Parsed game update:", gameUpdate);
 
-        // Only update if it's from another player and has valid data
-        if (gameUpdate.type === 'player_update' && 
-            gameUpdate.playerId && 
-            gameUpdate.playerId !== userSession.account.user.id) {
+        // Handle different types of game updates
+        if (gameUpdate.playerId && gameUpdate.playerId !== userSession.account.user.id) {
           
-          console.log(`Updating player ${gameUpdate.playerId} (${gameUpdate.username}):`, {
-            position: gameUpdate.position,
-            rotation: gameUpdate.rotation
-          });
+          // Handle player position updates
+          if (gameUpdate.type === 'player_update') {
+            console.log(`Updating player ${gameUpdate.playerId} (${gameUpdate.username}):`, {
+              position: gameUpdate.position,
+              rotation: gameUpdate.rotation
+            });
 
-          setOtherPlayersData(prev => {
-            const updated = {
-              ...prev,
-              [gameUpdate.playerId]: {
-                position: gameUpdate.position,
-                rotation: gameUpdate.rotation,
-                username: gameUpdate.username,
-                lastUpdate: Date.now()
-              }
-            };
-            console.log("Updated other players state:", updated);
-            return updated;
-          });
+            setOtherPlayersData(prev => {
+              const updated = {
+                ...prev,
+                [gameUpdate.playerId]: {
+                  position: gameUpdate.position,
+                  rotation: gameUpdate.rotation,
+                  username: gameUpdate.username,
+                  lastUpdate: Date.now()
+                }
+              };
+              console.log("Updated other players state:", updated);
+              return updated;
+            });
+          }
+          
+          // Handle raycast shots from other players
+          else if (gameUpdate.type === 'raycast_shot') {
+            console.log(`🔫 Received raycast shot from ${gameUpdate.username} (${gameUpdate.playerId})`);
+            
+            // Check if this raycast hits the local player
+            // We'll need to access the hit detection function from GameLogic
+            // For now, we'll trigger a callback that GameLogic can handle
+            if (window.handleIncomingRaycast) {
+              window.handleIncomingRaycast(gameUpdate);
+            }
+          }
         }
       } catch (error) {
         console.error("Error processing match data:", error);

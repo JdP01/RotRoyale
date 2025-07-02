@@ -2,7 +2,7 @@
 
 .player-ui {
   position: fixed;
-  top: 120px;
+  bottom: 20px;
   left: 20px;
   z-index: 100;
   pointer-events: none;

@@ -17,6 +17,11 @@ export const usePlayerState = create((set, get) => ({
   raycastStart: null,
   raycastEnd: null,
   
+  // Enemy raycast visualization (from other players)
+  enemyRaycastVisible: false,
+  enemyRaycastStart: null,
+  enemyRaycastEnd: null,
+  
   // Actions
   takeDamage: (amount, source = 'unknown') => {
     const currentHealth = get().health;
@@ -80,7 +85,10 @@ export const usePlayerState = create((set, get) => ({
       isExhausted: false,
       raycastVisible: false,
       raycastStart: null,
-      raycastEnd: null
+      raycastEnd: null,
+      enemyRaycastVisible: false,
+      enemyRaycastStart: null,
+      enemyRaycastEnd: null
     });
   },
   
@@ -97,6 +105,18 @@ export const usePlayerState = create((set, get) => ({
       raycastEnd: { ...endPos }
     });
     
+    // Broadcast raycast to other players if callback is set
+    const { broadcastCallback } = get();
+    if (broadcastCallback) {
+      broadcastCallback({
+        type: 'raycast_shot',
+        startPosition: startPos,
+        endPosition: endPos,
+        damage: 25, // Base damage per shot
+        timestamp: Date.now()
+      });
+    }
+    
     // Auto-hide after a short duration
     setTimeout(() => {
       set({ raycastVisible: false });
@@ -105,6 +125,26 @@ export const usePlayerState = create((set, get) => ({
   
   hideRaycast: () => {
     set({ raycastVisible: false });
+  },
+  
+  // Enemy raycast actions (for visualizing other players' shots)
+  showEnemyRaycast: (startPos, endPos) => {
+    console.log(`👁️ Showing enemy raycast from (${startPos.x.toFixed(1)}, ${startPos.y.toFixed(1)}, ${startPos.z.toFixed(1)}) to (${endPos.x.toFixed(1)}, ${endPos.y.toFixed(1)}, ${endPos.z.toFixed(1)})`);
+    
+    set({
+      enemyRaycastVisible: true,
+      enemyRaycastStart: { ...startPos },
+      enemyRaycastEnd: { ...endPos }
+    });
+    
+    // Auto-hide after a short duration
+    setTimeout(() => {
+      set({ enemyRaycastVisible: false });
+    }, 1000);
+  },
+  
+  hideEnemyRaycast: () => {
+    set({ enemyRaycastVisible: false });
   },
   
   // Debug function to get current state
