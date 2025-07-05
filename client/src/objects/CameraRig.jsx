@@ -4,7 +4,8 @@ import * as THREE from 'three'
 
 export function CameraRig({
     targetRef,
-    characterRotation = 0, // Rotation passed from character
+    characterRotation = 0, // Rotation passed from character (yaw)
+    cameraPitch = 0,       // Pitch passed from character (up/down)
     distance = 5,          // How far behind the character
     height = 2,            // How high above the character  
     heightOffset = 1,      // How much higher to look than the character
@@ -32,23 +33,29 @@ export function CameraRig({
         
         const characterPos = tempVec.set(pos.x, pos.y, pos.z);
         
-        // Use the character's rotation (from mouse movement) for camera positioning
-        // Calculate ideal camera position behind the character
-        const behindOffset = tempVec2.set(0, 0, -distance);
-        behindOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
+        // Calculate camera position with orbital movement (both horizontal and vertical)
+        // Start with base offset behind the character
+        const cameraOffset = tempVec2.set(0, 0, -distance);
         
+        // Apply horizontal rotation (yaw) around Y axis
+        cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
+        
+        // Apply vertical rotation (pitch) - orbit around the character
+        // Create a right vector for the current camera orientation
+        const rightVector = new THREE.Vector3(1, 0, 0);
+        rightVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
+        
+        // Rotate the camera offset around the right axis to create vertical orbiting
+        cameraOffset.applyAxisAngle(rightVector, cameraPitch);
+        
+        // Position camera relative to character
         idealCameraPos.current.copy(characterPos)
-            .add(behindOffset)
-            .setY(characterPos.y + height);
+            .add(cameraOffset)
+            .setY(characterPos.y + height + cameraOffset.y); // Add the vertical offset from pitch
     
-        // Calculate ideal look-at position (slightly ahead and above the character)
+        // Always look at the character (with small height offset for better framing)
         idealLookAt.current.copy(characterPos)
             .setY(characterPos.y + heightOffset);
-        
-        // Add a slight forward offset to the look-at point using character rotation
-        const forwardOffset = new THREE.Vector3(0, 0, 2);
-        forwardOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
-        idealLookAt.current.add(forwardOffset);
         
         // Initialize camera position on first frame
         if (currentCameraPos.current.length() === 0) {
@@ -56,9 +63,12 @@ export function CameraRig({
             currentLookAt.current.copy(idealLookAt.current);
         }
         
-        // Smooth camera position interpolation
+        // Smooth camera position interpolation (keep some smoothing for position)
         currentCameraPos.current.lerp(idealCameraPos.current, stiffness);
-        currentLookAt.current.lerp(idealLookAt.current, lookStiffness);
+        
+        // Make look-at more responsive for precise aiming - use higher interpolation or direct assignment
+        const responsiveLookStiffness = Math.min(lookStiffness * 1.5, 0.95); // Boost responsiveness
+        currentLookAt.current.lerp(idealLookAt.current, responsiveLookStiffness);
         
         // Apply to camera
         camera.position.copy(currentCameraPos.current);

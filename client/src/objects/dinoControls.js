@@ -27,7 +27,8 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     //const shootPressed = useKeyboardControls((state) => state[Controls.shoot]);
     
     const dir = new THREE.Vector3();
-    const [cameraRotation, setCameraRotation] = useState(0); // Camera/mouse rotation
+    const [cameraRotation, setCameraRotation] = useState(0); // Camera/mouse rotation (yaw)
+    const [cameraPitch, setCameraPitch] = useState(0); // Camera pitch (up/down)
     const [characterRotation, setCharacterRotation] = useState(0); // Visual character rotation
     const sensitivity = 0.002;
 
@@ -49,10 +50,15 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         const onMouseMove = (event) => {
             if (document.pointerLockElement !== canvas) return;
             
-            // Update camera rotation based on horizontal mouse movement
-        
+            // Update camera rotation based on horizontal mouse movement (yaw)
             setCameraRotation(prev => prev - event.movementX * sensitivity);
-            //setCharacterRotation(prev => prev - event.movementX * sensitivity);
+            
+            // Update camera pitch based on vertical mouse movement (pitch)
+            setCameraPitch(prev => {
+                const newPitch = prev + event.movementY * sensitivity;
+                // Clamp pitch to prevent over-rotation (looking too far up or down)
+                return Math.max(-Math.PI / 2, Math.min(Math.PI / 2, newPitch));
+            });
         };
 
         const onKeyDown = (event) => {
@@ -71,33 +77,20 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
                     // Already locked - handle shooting
                     console.log("🔫 SHOOTING!");
                     
-                    // Simple raycast from gun position
+                    // Raycast from camera center
                     if (bodyRef.current && camera) {
-                        const playerPosition = bodyRef.current.translation();
+                        // Get camera position as the start point
+                        const cameraPosition = camera.position.clone();
                         
-                        // Gun offset relative to player
-                        const gunOffset = new THREE.Vector3(0.2, 1, -2);
-                        const gunWorldPosition = new THREE.Vector3(
-                            playerPosition.x + gunOffset.x,
-                            playerPosition.y + gunOffset.y,
-                            playerPosition.z + gunOffset.z
-                        );
-                        
-                        // Get camera's actual forward direction
+                        // Get camera's forward direction
                         const cameraDirection = new THREE.Vector3();
                         camera.getWorldDirection(cameraDirection);
                         
-                        // Add vertical offset relative to camera orientation
-                        const cameraUp = new THREE.Vector3(0, 1, 0);
-                        const cameraRight = new THREE.Vector3().crossVectors(cameraDirection, cameraUp).normalize();
-                        const verticalOffset = Math.PI / 11; // 15 degrees upward
-                        const verticalRotation = new THREE.Matrix4().makeRotationAxis(cameraRight, verticalOffset);
-                        const offsetDirection = cameraDirection.clone().applyMatrix4(verticalRotation);
+                        // Calculate end point of the ray (100 units forward from camera)
+                        const rayEnd = cameraPosition.clone().add(cameraDirection.clone().multiplyScalar(100));
                         
-                        // Cast ray in offset direction
-                        const rayEnd = gunWorldPosition.clone().add(offsetDirection.clone().multiplyScalar(100))
-                        // Trigger raycast visualization
-                        fireRaycast(gunWorldPosition, rayEnd);
+                        // Trigger raycast visualization from camera center
+                        fireRaycast(cameraPosition, rayEnd);
                     }
                 }
             }
@@ -235,7 +228,8 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
 
     return {
         handleMovement,
-        cameraRotation,     // For camera positioning
+        cameraRotation,     // For camera positioning (yaw)
+        cameraPitch,        // For camera pitch (up/down)
         characterRotation,  // For character visual rotation
         jumpPressed,
         forwardPressed,

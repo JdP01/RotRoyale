@@ -10,6 +10,7 @@ import { usePlayerState } from "../game/PlayerState";
 export const Dino = ({ 
     ref: bodyRef, 
     onRotationChange, 
+    onCameraPitchChange,
     isNetworkedPlayer = false, 
     networkAnimationState,
     networkPosition,
@@ -173,6 +174,10 @@ export const Dino = ({
                 
                 if (onRotationChange) {
                     onRotationChange(controls.cameraRotation);
+                }
+                
+                if (onCameraPitchChange) {
+                    onCameraPitchChange(controls.cameraPitch);
                 }
             }
         }

@@ -133,3 +133,49 @@
 .respawn-button:active {
   transform: translateY(0);
 }
+
+/* Crosshairs Styles */
+.crosshairs {
+  position: fixed;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.crosshair-line {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Vertical lines (top and bottom) */
+.crosshair-top {
+  width: 1px;
+  height: 10px;
+  top: -25px;
+  left: -1px;
+}
+
+.crosshair-bottom {
+  width: 1px;
+  height: 10px;
+  top: 10px;
+  left: -1px;
+}
+
+/* Horizontal lines (left and right) */
+.crosshair-left {
+  width: 10px;
+  height: 1px;
+  top: -1px;
+  left: -25px;
+}
+
+.crosshair-right {
+  width: 10px;
+  height: 1px;
+  top: -1px;
+  left: 10px;
+}

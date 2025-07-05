@@ -45,6 +45,8 @@ const GameLogic = ({
   dinoRef,
   dinoRotation,
   setDinoRotation,
+  cameraPitch,
+  setCameraPitch,
   otherPlayersData
 }) => {
   const lastSentTime = useRef(0);
@@ -317,6 +319,7 @@ const GameLogic = ({
       <Dino
         ref={dinoRef}
         onRotationChange={setDinoRotation}
+        onCameraPitchChange={setCameraPitch}
         castShadow
         userSession={userSession}
         currentMatch={currentMatch}
@@ -337,11 +340,12 @@ const GameLogic = ({
       <CameraRig
         targetRef={dinoRef}
         characterRotation={dinoRotation}
-        distance={8}
-        height={3.5}
+        cameraPitch={cameraPitch}
+        distance={6}
+        height={2.5}
         heightOffset={0.5}
-        stiffness={0.1}
-        lookStiffness={0.12}
+        stiffness={0.8}
+        lookStiffness={0.9}
       />
 
       {/* Raycast Visualizer for player's own shots */}
@@ -374,6 +378,7 @@ export default function GameCanvas({
   backToMenu 
 }) {
   const [dinoRotation, setDinoRotation] = useState(0);
+  const [cameraPitch, setCameraPitch] = useState(0);
   const dinoRef = useRef(null);
   
   // Get player state for respawn functionality
@@ -537,6 +542,7 @@ export default function GameCanvas({
       dinoRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
       // Reset rotation
       setDinoRotation(0);
+      setCameraPitch(0);
       dinoRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
       
       // Reset player health and stamina
@@ -600,7 +606,7 @@ export default function GameCanvas({
           shadowMap: { enabled: true, type: THREE.UnfiltedShadowMap }
         }}>
           <Suspense fallback={null}>
-            <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300} debug>
+            <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300} >
               <OrbitControls />
 
               <GameEnvironment />
@@ -611,6 +617,8 @@ export default function GameCanvas({
                 dinoRef={dinoRef}
                 dinoRotation={dinoRotation}
                 setDinoRotation={setDinoRotation}
+                cameraPitch={cameraPitch}
+                setCameraPitch={setCameraPitch}
                 otherPlayersData={otherPlayersData}
               />
 
