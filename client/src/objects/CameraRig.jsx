@@ -53,9 +53,24 @@ export function CameraRig({
             .add(cameraOffset)
             .setY(characterPos.y + height + cameraOffset.y); // Add the vertical offset from pitch
     
-        // Always look at the character (with small height offset for better framing)
+        // Create offset look-at target to position character in lower-left quadrant
+        // Calculate forward and right vectors relative to camera orientation
+        const forwardVector = new THREE.Vector3(0, 0, 1);
+        forwardVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
+        forwardVector.applyAxisAngle(rightVector, cameraPitch);
+        
+        const upVector = new THREE.Vector3(0, 1, 0);
+        const rightCameraVector = new THREE.Vector3().crossVectors(forwardVector, upVector).normalize();
+        const upCameraVector = new THREE.Vector3().crossVectors(rightCameraVector, forwardVector).normalize();
+        
+        // Offset the look-at target to position character in lower-left quadrant
+        const horizontalOffset = 2; // Positive values move character to the left of screen
+        const verticalOffset = 1;  // Negative values move character to bottom of screen
+        
         idealLookAt.current.copy(characterPos)
-            .setY(characterPos.y + heightOffset);
+            .setY(characterPos.y + heightOffset)
+            .add(rightCameraVector.clone().multiplyScalar(horizontalOffset))
+            .add(upCameraVector.clone().multiplyScalar(verticalOffset));
         
         // Initialize camera position on first frame
         if (currentCameraPos.current.length() === 0) {

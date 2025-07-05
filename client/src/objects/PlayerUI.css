@@ -137,7 +137,7 @@
 /* Crosshairs Styles */
 .crosshairs {
   position: fixed;
-  top: 45%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1000;
@@ -146,36 +146,36 @@
 
 .crosshair-line {
   position: absolute;
-  background-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
 }
 
 /* Vertical lines (top and bottom) */
 .crosshair-top {
-  width: 1px;
-  height: 10px;
-  top: -25px;
+  width: 2px;
+  height: 12px;
+  top: -18px;
   left: -1px;
 }
 
 .crosshair-bottom {
-  width: 1px;
-  height: 10px;
-  top: 10px;
+  width: 2px;
+  height: 12px;
+  top: 6px;
   left: -1px;
 }
 
 /* Horizontal lines (left and right) */
 .crosshair-left {
-  width: 10px;
-  height: 1px;
+  width: 12px;
+  height: 2px;
   top: -1px;
-  left: -25px;
+  left: -18px;
 }
 
 .crosshair-right {
-  width: 10px;
-  height: 1px;
+  width: 12px;
+  height: 2px;
   top: -1px;
-  left: 10px;
+  left: 6px;
 }
