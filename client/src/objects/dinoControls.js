@@ -119,7 +119,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         let sprinting = false;
         
         // Check if can sprint (need stamina and not exhausted)
-        const canSprint = sprintPressed && stamina > 10 && !isExhausted;
+        const canSprint = sprintPressed && stamina && !isExhausted;
         
         // Calculate forward and right vectors based on camera rotation (for movement)
         const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraRotation);
@@ -134,12 +134,6 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             moving = true;
             // Face forward direction
             targetCharacterRotation = cameraRotation + Math.PI;
-            
-            if (canSprint) {
-                sprinting = true;
-                // Consume stamina while sprinting
-                consumeStamina(50 * delta); // 50 stamina per second
-            }
         }
         if (backPressed) {
             dir.sub(forward);
@@ -159,10 +153,15 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             // Face right direction
             targetCharacterRotation = cameraRotation + Math.PI / 2;
         }
-        
+        if (canSprint) {
+                sprinting = true;
+                // Consume stamina while sprinting
+                consumeStamina(50 * delta); // 50 stamina per second
+            }
+
         // Regenerate stamina when not sprinting
         if (!sprinting && stamina < 100) {
-            regenerateStamina(25 * delta); // 25 stamina per second
+            regenerateStamina(20 * delta); // 25 stamina per second
         }
         
         // ...existing code for diagonal movement...
