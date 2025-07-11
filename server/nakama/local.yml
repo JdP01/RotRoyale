@@ -8,8 +8,8 @@ database:
   dsn: "postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable"
 
 console:
-  username: "admin"
-  password: "password"
+  username: "juandi"
+  password: ***REMOVED***
   http_bind_address: "0.0.0.0"
 
 session:
