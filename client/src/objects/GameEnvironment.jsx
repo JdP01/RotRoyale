@@ -4,10 +4,11 @@ import { RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 
 const mapScale = 4.5; //original is 5.5
-const lightPos = [100, 30, 100];
+const lightPos = [100, 5, 100];
 
 const GameEnvironment = () => {
   const { scene: gameMap } = useGLTF('/objects/Map2.glb');
+  const {scene: cactus} = useGLTF('/objects/cactus.glb');
 
   useEffect(() => {
     gameMap.traverse((child) => {
@@ -15,12 +16,13 @@ const GameEnvironment = () => {
         gameMap.castShadow = true;
         gameMap.receiveShadow = true;
       }
+      
     })
   }, [gameMap]);
 
   return (
     <>
-      <Sky sunPosition={lightPos} mieCoefficient={0.001} rayleigh={0.2} turbidity={20} castShadow />
+      <Sky sunPosition={lightPos} mieCoefficient={0.001} rayleigh={1.2} turbidity={20} castShadow />
 
       <ambientLight intensity={0.8} color="#87CEEB" />
       <directionalLight
@@ -43,7 +45,7 @@ const GameEnvironment = () => {
         color={'#b3d9ff'}
       />
       <directionalLight
-        position={[0, 10, -100]}
+        position={[0, 20, -100]}
         intensity={1.2}
         color={'#ffd700'}
       />
@@ -63,6 +65,16 @@ const GameEnvironment = () => {
         restitution={0}
       >
         <primitive object={gameMap} scale={mapScale} castShadow receiveShadow={true} />
+      </RigidBody>
+      <RigidBody
+        colliders="hull"
+        type="fixed"
+        name="cactus"
+        interpolate={true}
+        friction={1}
+        restitution={0}
+      >
+        <primitive object={cactus} scale={0.3} castShadow receiveShadow={true} position={[-20, -40.1, -40]} rotation={[0, Math.PI / 3, 0]}  />
       </RigidBody>
     </>
   );
