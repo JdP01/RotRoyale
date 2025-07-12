@@ -3,11 +3,11 @@ import { useGLTF, Sky } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 
-const mapScale = 5.5;
+const mapScale = 4.5; //original is 5.5
 const lightPos = [100, 30, 100];
 
 const GameEnvironment = () => {
-  const { scene: gameMap } = useGLTF('/objects/mapTest.glb');
+  const { scene: gameMap } = useGLTF('/objects/Map2.glb');
 
   useEffect(() => {
     gameMap.traverse((child) => {
@@ -48,7 +48,7 @@ const GameEnvironment = () => {
         color={'#ffd700'}
       />
 
-      <mesh position={[0, 0.75, 0]} rotation={[-Math.PI / 2, 0, 0]} > {/* Water */}
+      <mesh position={[0, -41.9, 0]} rotation={[-Math.PI / 2, 0, 0]} > {/* Water */}
         <planeGeometry args={[100, 100]} />
         <meshStandardMaterial color="#0074ad" transparent opacity={0.8}
           metalness={0.1} roughness={1} envMapIntensity={0.8} />

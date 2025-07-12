@@ -25,7 +25,9 @@ function LoginPage({ onLoginSuccess }) {
       console.log("Attempting to authenticate with Nakama...");
       
       // Create client with explicit configuration
-      const client = new Nakama.Client("defaultkey", "147.182.219.213", 7350, false);
+      //const client = new Nakama.Client("defaultkey", "147.182.219.213", 7350, false);
+      const client = new Nakama.Client("defaultkey", "localhost", 7350, false);
+
       
       // Add timeout and retry logic
       const timeoutPromise = new Promise((_, reject) =>
