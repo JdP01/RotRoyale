@@ -1,6 +1,6 @@
 import React from 'react';
 import MatchmakingUI from './MatchmakingUI';
-import './styling/GameUI.css';
+import '../styling/GameUI.css';
 
 // Main menu UI component
 export function MenuUI({ startSinglePlayer, startMultiplayer }) {

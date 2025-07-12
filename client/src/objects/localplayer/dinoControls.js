@@ -1,9 +1,9 @@
 import { useKeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import * as THREE from "three";
-import { Controls } from "./GameCanvas";
+import { Controls } from "../world/GameCanvas";
 import { useEffect, useRef, useState } from 'react';
-import { usePlayerState } from "../game/PlayerState";
+import { usePlayerState } from "../../logic/PlayerState";
 
 export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     // Get camera reference

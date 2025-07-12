@@ -1,6 +1,6 @@
 // src/components/MatchmakingUI.jsx
 import React from 'react';
-import { useMatchmaking } from './MatchmakingLogic';
+import { useMatchmaking } from '../logic/MatchmakingLogic';
 
 /**
  * UI Component for the matchmaking screen

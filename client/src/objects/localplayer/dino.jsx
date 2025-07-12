@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { useDinoAnimations } from "./dinoAnimations";
 import { useDinoControls } from "./dinoControls";
-import { usePlayerState } from "../game/PlayerState";
+import { usePlayerState } from "../../logic/PlayerState";
 
 export const Dino = ({ 
     ref: bodyRef, 

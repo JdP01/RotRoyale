@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
-import './index.css';
-import GameCanvas from './objects/GameCanvas';
-import LoginPage from './LandingPage/LoginPage';
-import { MenuUI, MatchmakingUIWrapper } from './objects/GameUI';
+import './styling/index.css';
+import GameCanvas from './objects/world/GameCanvas';
+import LoginPage from './ui/LoginPage';
+import { MenuUI, MatchmakingUIWrapper } from './ui/GameUI';
 
 export default function App() { 
   const [isLoggedIn, setIsLoggedIn] = useState(false);

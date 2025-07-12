@@ -1,7 +1,7 @@
 // Player UI Component for Health and Stamina Display
 import React from 'react';
-import { usePlayerState } from '../game/PlayerState';
-import './PlayerUI.css';
+import { usePlayerState } from '../logic/PlayerState';
+import '../styling/PlayerUI.css';
 
 export const PlayerUI = () => {
   const { health, stamina, maxHealth, maxStamina, isDead, reset } = usePlayerState();
