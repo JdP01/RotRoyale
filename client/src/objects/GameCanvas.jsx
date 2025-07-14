@@ -273,9 +273,6 @@ const GameLogic = ({
 
     const position = dinoRef.current.translation();
 
-    // Debug: Print character position
-    console.log(`🦕 Character Position: X=${position.x.toFixed(2)}, Y=${position.y.toFixed(2)}, Z=${position.z.toFixed(2)}`);
-
     const playerUpdate = {
       type: 'player_update',
       playerId: userSession.account.user.id,
