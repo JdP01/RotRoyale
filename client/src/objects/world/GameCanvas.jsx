@@ -603,7 +603,7 @@ export default function GameCanvas({
       {/* Game Canvas */}
       <KeyboardControls map={map}>
         <Canvas shadows gl={{
-          shadowMap: { enabled: true, type: THREE.UnfiltedShadowMap }
+          shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }
         }}>
           <Suspense fallback={null}>
             <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300} >

@@ -2,13 +2,13 @@ import React, { Suspense, useMemo, useState, useRef, useEffect, useCallback } fr
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Box, KeyboardControls, OrbitControls, Sky } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
-import { Dino } from './dino';
+import { Dino } from './localplayer/dino';
 import * as THREE from "three";
-import { CameraRig } from './CameraRig';
-import GameEnvironment from './GameEnvironment';
-import { PlayerUI } from './PlayerUI';
-import { usePlayerState } from '../game/PlayerState';
-import RaycastVisualizer from './RaycastVisualizer';
+import { CameraRig } from './localplayer/CameraRig';
+import GameEnvironment from './world/GameEnvironment';
+import { PlayerUI } from '../ui/PlayerUI';
+import { usePlayerState } from '../logic/PlayerState';
+import RaycastVisualizer from './world/RaycastVisualizer';
 //import './styling/GameCanvas.css'; // Import the CSS file  
 
 export const Controls = {
@@ -272,6 +272,9 @@ const GameLogic = ({
     if (now - lastSentTime.current < 100) return;
 
     const position = dinoRef.current.translation();
+
+    // Debug: Print character position
+    console.log(`🦕 Character Position: X=${position.x.toFixed(2)}, Y=${position.y.toFixed(2)}, Z=${position.z.toFixed(2)}`);
 
     const playerUpdate = {
       type: 'player_update',
@@ -603,7 +606,7 @@ export default function GameCanvas({
       {/* Game Canvas */}
       <KeyboardControls map={map}>
         <Canvas shadows gl={{
-          shadowMap: { enabled: true, type: THREE.UnfiltedShadowMap }
+          shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }
         }}>
           <Suspense fallback={null}>
             <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300} >
