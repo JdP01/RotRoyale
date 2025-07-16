@@ -6,53 +6,29 @@ import * as THREE from 'three';
 // Import map layout data
 import mapData from '../instructions/beachmap.json';
 
-// Preload all models
+// Import individual prop components  
+import { CactusProp } from '../props/cactus_1.js';
+import { PalmTreeProp } from '../props/palmtree_1.js';
+import { TreeProp } from '../props/tree_1.js';
+
+// Preload main map model (props handle their own preloading)
 useGLTF.preload('/objects/Map2.glb');
-useGLTF.preload('/objects/cactus.glb');
-useGLTF.preload('/objects/palmTree.glb');
-useGLTF.preload('/objects/game_tree.glb');
-
-// Helper function to get asset path
-const getAssetPath = (type) => {
-  switch (type) {
-    case 'cactus':
-      return '/objects/cactus.glb';
-    case 'palmtree':
-      return '/objects/palmTree.glb';
-    case 'tree':
-      return '/objects/game_tree.glb';
-    default:
-      throw new Error(`Unknown asset type: ${type}`);
-  }
-};
-
-// Helper function to extract geometry and material from GLTF
-const getAssetData = (path) => {
-  const { scene } = useGLTF(path);
-  let geometry = null;
-  let material = null;
-  
-  scene.traverse((child) => {
-    if (child.isMesh && !geometry) {
-      geometry = child.geometry.clone();
-      material = child.material.clone();
-      
-      // Ensure proper shadow settings
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-  
-  return { geometry, material };
-};
 
 const InstancedProps = ({ propType, instances }) => {
   const instancedMeshRef = useRef();
   
   const { geometry, material } = useMemo(() => {
     try {
-      const assetPath = getAssetPath(propType);
-      return getAssetData(assetPath);
+      switch (propType) {
+        case 'cactus':
+          return CactusProp();
+        case 'palmtree':
+          return PalmTreeProp();
+        case 'tree':
+          return TreeProp();
+        default:
+          throw new Error(`Unknown prop type: ${propType}`);
+      }
     } catch (error) {
       console.warn(`Error loading asset for ${propType}:`, error);
       return { geometry: null, material: null };
@@ -110,8 +86,16 @@ const InstancedPropsWithPhysics = ({ propType, instances }) => {
 
   const { geometry } = useMemo(() => {
     try {
-      const assetPath = getAssetPath(propType);
-      return getAssetData(assetPath);
+      switch (propType) {
+        case 'cactus':
+          return CactusProp();
+        case 'palmtree':
+          return PalmTreeProp();
+        case 'tree':
+          return TreeProp();
+        default:
+          throw new Error(`Unknown prop type: ${propType}`);
+      }
     } catch (error) {
       console.warn(`Error loading physics geometry for ${propType}:`, error);
       return { geometry: null };
@@ -185,14 +169,15 @@ const BeachMap = () => {
       >
         <primitive 
           object={gameMap} 
-          scale={mapData.mapScale} 
+          scale={mapData.mapScale}
+          position={mapData.mapPosition || [0, 0, 0]}
           castShadow 
           receiveShadow 
         />
       </RigidBody>
 
       {/* Water mesh */}
-      <mesh position={[0, -41.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -1.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[100, 100]} />
         <meshStandardMaterial 
           color="#0074ad" 

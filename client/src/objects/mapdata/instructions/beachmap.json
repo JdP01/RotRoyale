@@ -2,158 +2,159 @@
   "mapName": "Beach Map",
   "mapFile": "/objects/Map2.glb",
   "mapScale": [4.5, 4.5, 4.5],
+  "mapPosition": [0, 40, 0],
   "instances": [
     {
       "id": "cactus_001",
       "type": "cactus",
-      "position": [-20, -40.1, -40],
+      "position": [-20, -0.1, -40],
       "rotation": [0, 1.047, 0],
       "scale": [0.3, 0.3, 0.3]
     },
     {
       "id": "cactus_002",
       "type": "cactus",
-      "position": [-35, -39, -25],
+      "position": [-35, 1, -25],
       "rotation": [0, 0.785, 0],
       "scale": [0.35, 0.35, 0.35]
     },
     {
       "id": "cactus_003",
       "type": "cactus",
-      "position": [-30, -40.1, -53],
+      "position": [-30, -0.1, -53],
       "rotation": [0, -0.523, 0],
       "scale": [0.28, 0.28, 0.28]
     },
     {
       "id": "cactus_004",
       "type": "cactus",
-      "position": [0, -40.1, -30],
+      "position": [0, -0.1, -30],
       "rotation": [0, 2.094, 0],
       "scale": [0.32, 0.32, 0.32]
     },
     {
       "id": "cactus_005",
       "type": "cactus",
-      "position": [-10, -40.1, -20],
+      "position": [-10, -0.1, -20],
       "rotation": [0, -1.571, 0],
       "scale": [0.29, 0.29, 0.29]
     },
     {
       "id": "cactus_006",
       "type": "cactus",
-      "position": [-50, -39, -18],
+      "position": [-50, 1, -18],
       "rotation": [0, 0.261, 0],
       "scale": [0.33, 0.33, 0.33]
     },
     {
       "id": "cactus_007",
       "type": "cactus",
-      "position": [-45, -38, -45],
+      "position": [-45, 2, -45],
       "rotation": [0, -2.094, 0],
       "scale": [0.27, 0.27, 0.27]
     },
     {
       "id": "cactus_008",
       "type": "cactus",
-      "position": [-5, -40.1, -50],
+      "position": [-5, -0.1, -50],
       "rotation": [0, 1.309, 0],
       "scale": [0.31, 0.31, 0.31]
     },
     {
       "id": "palmtree_001",
       "type": "palmtree",
-      "position": [25, -40.1, 15],
+      "position": [25, -0.1, 15],
       "rotation": [0, 0.261, 0],
       "scale": [3,3,3]
     },
     {
       "id": "palmtree_002",
       "type": "palmtree",
-      "position": [-40, -40.1, 35],
+      "position": [-40, -0.1, 35],
       "rotation": [0, -0.785, 0],
       "scale": [3,3,3]
     },
     {
       "id": "palmtree_003",
       "type": "palmtree",
-      "position": [4, -40.4, -10],
+      "position": [4, -0.4, -10],
       "rotation": [0, 1.309, 0],
       "scale": [3,3,3]
     },
     {
       "id": "palmtree_004",
       "type": "palmtree",
-      "position": [-20, -41, -10],
+      "position": [-20, -1, -10],
       "rotation": [0, 2.618, 0],
       "scale": [3,3,3]
     },
     {
       "id": "palmtree_005",
       "type": "palmtree",
-      "position": [5, -40.1, 65],
+      "position": [5, -0.1, 65],
       "rotation": [0, -1.047, 0],
       "scale": [3,3,3]
     },
     {
       "id": "palmtree_006",
       "type": "palmtree",
-      "position": [-12, -41, -14],
+      "position": [-12, -1, -14],
       "rotation": [0, 1.833, 0],
       "scale": [3,3,3]
     },
     {
       "id": "tree_001",
       "type": "tree",
-      "position": [30, -40.1, -45],
+      "position": [30, -0.1, -45],
       "rotation": [0, 0.523, 0],
       "scale": [3,3,3]
     },
     {
       "id": "tree_002",
       "type": "tree",
-      "position": [-25, -40.1, 45],
+      "position": [-25, -0.1, 45],
       "rotation": [0, -1.047, 0],
       "scale": [3,3,3]
     },
     {
       "id": "tree_003",
       "type": "tree",
-      "position": [50, -40.1, 25],
+      "position": [50, -0.1, 25],
       "rotation": [0, 1.833, 0],
       "scale": [3,3,3]
     },
     {
       "id": "tree_004",
       "type": "tree",
-      "position": [-40, -40.1, 9],
+      "position": [-40, -0.1, 9],
       "rotation": [0, -2.356, 0],
       "scale": [3,3,3]
     },
     {
       "id": "tree_005",
       "type": "tree",
-      "position": [10, -40.1, 55],
+      "position": [10, -0.1, 55],
       "rotation": [0, 0.785, 0],
       "scale": [3,3,3]
     },
     {
       "id": "tree_006",
       "type": "tree",
-      "position": [-50, -40.1, 15],
+      "position": [-50, -0.1, 15],
       "rotation": [0, -0.523, 0],
       "scale": [3,3,3]
     },
     {
       "id": "tree_007",
       "type": "tree",
-      "position": [40, -40.1, 50],
+      "position": [40, -0.1, 50],
       "rotation": [0, 2.094, 0],
       "scale": [3,3,3]
     },
     {
       "id": "tree_008",
       "type": "tree",
-      "position": [-15, -39.25, 25],
+      "position": [-15, 0.75, 25],
       "rotation": [0, 1.571, 0],
       "scale": [3,3,3]
     }

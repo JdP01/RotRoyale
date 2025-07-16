@@ -11,7 +11,7 @@ The map system is designed to efficiently render multiple instances of the same 
 ```
 src/objects/mapdata/
 ├── maps/
-│   └── beachmap.js          # Main beach map implementation
+│   └── beachmap.jsx         # Main beach map implementation
 ├── props/
 │   ├── cactus_1.js          # Cactus prop definition
 │   ├── palmtree_1.js        # Palm tree prop definition
