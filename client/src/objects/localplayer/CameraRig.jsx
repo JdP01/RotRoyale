@@ -10,7 +10,8 @@ export function CameraRig({
     height = 2,            // How high above the character  
     heightOffset = 1,      // How much higher to look than the character
     stiffness = 0.08,      // Camera movement smoothness
-    lookStiffness = 0.12   // Look-at smoothness
+    lookStiffness = 0.12,  // Look-at smoothness
+    isAiming = false       // Aiming state for over-shoulder view
 }) {
     const { camera } = useThree()
     
@@ -34,8 +35,12 @@ export function CameraRig({
         const characterPos = tempVec.set(pos.x, pos.y, pos.z);
         
         // Calculate camera position with orbital movement (both horizontal and vertical)
+        // Adjust distance and height based on aiming state
+        const activeDistance = isAiming ? distance * 0.4 : distance; // Move closer when aiming
+        const activeHeight = isAiming ? height * 0.7 : height; // Lower camera when aiming
+        
         // Start with base offset behind the character
-        const cameraOffset = tempVec2.set(0, 0, -distance);
+        const cameraOffset = tempVec2.set(0, 0, -activeDistance);
         
         // Apply horizontal rotation (yaw) around Y axis
         cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
@@ -51,7 +56,7 @@ export function CameraRig({
         // Position camera relative to character
         idealCameraPos.current.copy(characterPos)
             .add(cameraOffset)
-            .setY(characterPos.y + height + cameraOffset.y); // Add the vertical offset from pitch
+            .setY(characterPos.y + activeHeight + cameraOffset.y); // Add the vertical offset from pitch
     
         // Create offset look-at target to position character in lower-left quadrant
         // Calculate forward and right vectors relative to camera orientation
@@ -64,8 +69,9 @@ export function CameraRig({
         const upCameraVector = new THREE.Vector3().crossVectors(rightCameraVector, forwardVector).normalize();
         
         // Offset the look-at target to position character in lower-left quadrant
-        const horizontalOffset = 2; // Positive values move character to the left of screen
-        const verticalOffset = 1;  // Negative values move character to bottom of screen
+        // Adjust offsets based on aiming state
+        const horizontalOffset = isAiming ? 1 : 2; // Less offset when aiming for more centered view
+        const verticalOffset = isAiming ? 0.5 : 1;  // Less vertical offset when aiming
         
         idealLookAt.current.copy(characterPos)
             .setY(characterPos.y + heightOffset)

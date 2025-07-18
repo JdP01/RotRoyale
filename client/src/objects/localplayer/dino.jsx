@@ -11,6 +11,7 @@ export const Dino = ({
     ref: bodyRef, 
     onRotationChange, 
     onCameraPitchChange,
+    onAimingChange,
     isNetworkedPlayer = false, 
     networkAnimationState,
     networkPosition,
@@ -99,6 +100,13 @@ export const Dino = ({
     
     // Get controller logic - only for local players
     const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, isOnFloor, setIsJumping) : null;
+    
+    // Pass aiming state up to parent component
+    useEffect(() => {
+        if (!isNetworkedPlayer && controls && onAimingChange) {
+            onAimingChange(controls.isAiming);
+        }
+    }, [controls?.isAiming, isNetworkedPlayer, onAimingChange]);
     
     // Get player state for health/stamina (only for local player)
     const { takeDamage } = !isNetworkedPlayer ? usePlayerState() : { takeDamage: () => {} };

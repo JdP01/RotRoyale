@@ -44,9 +44,11 @@ const GameLogic = ({
   currentMatch,
   dinoRef,
   dinoRotation,
-  setDinoRotation,
+  onRotationChange,
   cameraPitch,
-  setCameraPitch,
+  onCameraPitchChange,
+  isAiming,
+  onAimingChange,
   otherPlayersData
 }) => {
   const lastSentTime = useRef(0);
@@ -318,8 +320,9 @@ const GameLogic = ({
       {/* Main player */}
       <Dino
         ref={dinoRef}
-        onRotationChange={setDinoRotation}
-        onCameraPitchChange={setCameraPitch}
+        onRotationChange={onRotationChange}
+        onCameraPitchChange={onCameraPitchChange}
+        onAimingChange={onAimingChange}
         castShadow
         userSession={userSession}
         currentMatch={currentMatch}
@@ -341,6 +344,7 @@ const GameLogic = ({
         targetRef={dinoRef}
         characterRotation={dinoRotation}
         cameraPitch={cameraPitch}
+        isAiming={isAiming}
         distance={6}
         height={5}
         heightOffset={1}
@@ -379,7 +383,22 @@ export default function GameCanvas({
 }) {
   const [dinoRotation, setDinoRotation] = useState(0);
   const [cameraPitch, setCameraPitch] = useState(0);
+  const [isAiming, setIsAiming] = useState(false);
   const dinoRef = useRef(null);
+  
+  // Memoize the aiming callback to prevent unnecessary re-renders
+  const handleAimingChange = useCallback((aimingState) => {
+    setIsAiming(aimingState);
+  }, []);
+  
+  // Memoize rotation callbacks to prevent unnecessary re-renders
+  const handleRotationChange = useCallback((rotation) => {
+    setDinoRotation(rotation);
+  }, []);
+  
+  const handleCameraPitchChange = useCallback((pitch) => {
+    setCameraPitch(pitch);
+  }, []);
   
   // Get player state for respawn functionality
   const { reset: resetPlayerState } = usePlayerState();
@@ -555,7 +574,7 @@ export default function GameCanvas({
   return (
     <div className="game-container">
       {/* Player Health/Stamina UI */}
-      <PlayerUI />
+      <PlayerUI isAiming={isAiming} />
       
       {/* Enhanced Game Info Overlay */}
       <div className="game-info-overlay">
@@ -616,9 +635,11 @@ export default function GameCanvas({
                 currentMatch={currentMatch}
                 dinoRef={dinoRef}
                 dinoRotation={dinoRotation}
-                setDinoRotation={setDinoRotation}
+                onRotationChange={handleRotationChange}
                 cameraPitch={cameraPitch}
-                setCameraPitch={setCameraPitch}
+                onCameraPitchChange={handleCameraPitchChange}
+                isAiming={isAiming}
+                onAimingChange={handleAimingChange}
                 otherPlayersData={otherPlayersData}
               />
 

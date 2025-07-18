@@ -30,6 +30,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     const [cameraRotation, setCameraRotation] = useState(0); // Camera/mouse rotation (yaw)
     const [cameraPitch, setCameraPitch] = useState(0); // Camera pitch (up/down)
     const [characterRotation, setCharacterRotation] = useState(0); // Visual character rotation
+    const [isAiming, setIsAiming] = useState(false); // Right-click aiming state
     const sensitivity = 0.002;
 
     // Pointer lock setup
@@ -93,7 +94,22 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
                         fireRaycast(cameraPosition, rayEnd);
                     }
                 }
+            } else if (event.button === 2) { // Right mouse button
+                if (document.pointerLockElement === canvas) {
+                    setIsAiming(true);
+                }
             }
+        };
+
+        const onMouseUp = (event) => {
+            if (event.button === 2) { // Right mouse button release
+                setIsAiming(false);
+            }
+        };
+
+        // Prevent context menu on right click
+        const onContextMenu = (event) => {
+            event.preventDefault();
         };
 
         // Add event listeners
@@ -101,6 +117,8 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('keydown', onKeyDown);
         canvas.addEventListener('mousedown', onMouseDown);
+        canvas.addEventListener('mouseup', onMouseUp);
+        canvas.addEventListener('contextmenu', onContextMenu);
 
         // Cleanup
         return () => {
@@ -108,6 +126,8 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('keydown', onKeyDown);
             canvas.removeEventListener('mousedown', onMouseDown);
+            canvas.removeEventListener('mouseup', onMouseUp);
+            canvas.removeEventListener('contextmenu', onContextMenu);
         };
     }, [camera]); // Update dependencies to include camera
 
@@ -230,6 +250,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         cameraRotation,     // For camera positioning (yaw)
         cameraPitch,        // For camera pitch (up/down)
         characterRotation,  // For character visual rotation
+        isAiming,          // For aiming state
         jumpPressed,
         forwardPressed,
         backPressed,
