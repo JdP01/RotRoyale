@@ -152,26 +152,27 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         if (forwardPressed) {
             dir.add(forward);
             moving = true;
+            targetCharacterRotation = cameraRotation;
             // Face forward direction
-            targetCharacterRotation = cameraRotation + Math.PI;
         }
         if (backPressed) {
             dir.sub(forward);
             moving = true;
+            targetCharacterRotation = cameraRotation + Math.PI;
             // Face backward direction
-            targetCharacterRotation = cameraRotation;
+            
         }
         if (leftPressed) {
             dir.add(right);
             moving = true;
+            targetCharacterRotation = cameraRotation + Math.PI / 2;
             // Face left direction
-            targetCharacterRotation = cameraRotation - Math.PI / 2;
         }
         if (rightPressed) {
             dir.sub(right);
             moving = true;
             // Face right direction
-            targetCharacterRotation = cameraRotation + Math.PI / 2;
+            targetCharacterRotation = cameraRotation - Math.PI / 2;
         }
         if (canSprint) {
                 sprinting = true;
@@ -198,23 +199,24 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             }
             else if (forwardPressed && leftPressed) {
                 // Forward + Left = 45° left of forward
-                diagonalRotation = cameraRotation + Math.PI + Math.PI / 4;
+                diagonalRotation = cameraRotation + Math.PI / 4;
             } else if (forwardPressed && rightPressed) {
                 // Forward + Right = 45° right of forward
-                diagonalRotation = cameraRotation + Math.PI - Math.PI / 4;
+                diagonalRotation = cameraRotation - Math.PI / 4;
             } else if (backPressed && leftPressed) {
                 // Backward + Left = 45° left of backward
-                diagonalRotation = cameraRotation - Math.PI / 4;
+                diagonalRotation = cameraRotation + Math.PI - Math.PI / 4;
+                
             } else if (backPressed && rightPressed) {
                 // Backward + Right = 45° right of backward
-                diagonalRotation = cameraRotation + Math.PI / 4;
+                diagonalRotation = cameraRotation + Math.PI + Math.PI / 4;
             }
             
             targetCharacterRotation = diagonalRotation;
         }
         
         // Smoothly interpolate character rotation for natural turning
-        if (moving) {
+        if (true) {
             // Handle angle wrapping for smooth rotation
             let angleDiff = targetCharacterRotation - characterRotation;
             if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;

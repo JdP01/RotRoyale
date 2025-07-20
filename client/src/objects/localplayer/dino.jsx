@@ -230,7 +230,7 @@ export const Dino = ({
             gravityScale={5}
             friction={0}
         >
-            <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, Math.PI, 0]}>
+            <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, 0, 0]}>
                 {/* Main body */}
                 <primitive object={models.Body} position={[0, 0, 0]} />
             

@@ -342,8 +342,7 @@ const GameLogic = ({
         characterRotation={dinoRotation}
         cameraPitch={cameraPitch}
         distance={6}
-        height={5}
-        heightOffset={1}
+        height={3}
         stiffness={0.8}
         lookStiffness={0.9}
       />

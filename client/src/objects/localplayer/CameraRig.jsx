@@ -4,94 +4,81 @@ import * as THREE from 'three'
 
 export function CameraRig({
     targetRef,
-    characterRotation = 0, // Rotation passed from character (yaw)
-    cameraPitch = 0,       // Pitch passed from character (up/down)
-    distance = 5,          // How far behind the character
-    height = 2,            // How high above the character  
-    heightOffset = 1,      // How much higher to look than the character
-    stiffness = 0.08,      // Camera movement smoothness
-    lookStiffness = 0.12,  // Look-at smoothness
-    isAiming = false       // Aiming state for over-shoulder view
+    characterRotation = 0, // Character's yaw rotation
+    cameraPitch = 0,       // Camera vertical look angle
+    distance = 5,          // Distance behind character
+    height = 2,            // Camera height above character
+    heightOffset = 1,      // Look-at height offset
+    stiffness = 0.08,      // Camera position smoothing
+    lookStiffness = 0.12,  // Look-at smoothing
+    isAiming = false       // Over-shoulder view toggle
 }) {
     const { camera } = useThree()
     
-    // Camera state refs
+    // Current and target positions for smooth interpolation
     const currentCameraPos = useRef(new THREE.Vector3())
     const currentLookAt = useRef(new THREE.Vector3())
     const idealCameraPos = useRef(new THREE.Vector3())
     const idealLookAt = useRef(new THREE.Vector3())
-    
-    // Temporary vectors for calculations
-    const tempVec = useMemo(() => new THREE.Vector3(), [])
-    const tempVec2 = useMemo(() => new THREE.Vector3(), [])
 
     useFrame(() => {
-        if (!targetRef || !targetRef.current) return;
+        if (!targetRef?.current) return;
 
-        // Get character position
         const pos = targetRef.current.translation();
-        if (!pos) return; // Safety check for translation
+        if (!pos) return;
         
-        const characterPos = tempVec.set(pos.x, pos.y, pos.z);
+        const characterPos = new THREE.Vector3(pos.x, pos.y, pos.z);
         
-        // Calculate camera position with orbital movement (both horizontal and vertical)
-        // Adjust distance and height based on aiming state
-        const activeDistance = isAiming ? distance * 0.4 : distance; // Move closer when aiming
-        const activeHeight = isAiming ? height * 0.7 : height; // Lower camera when aiming
+        // Adjust camera distance for aiming (closer when aiming)
+        const activeDistance = isAiming ? distance * 0.4 : distance;
+        const activeHeight = isAiming ? height * 0.8 : height;
         
-        // Start with base offset behind the character
-        const cameraOffset = tempVec2.set(0, 0, -activeDistance);
-        
-        // Apply horizontal rotation (yaw) around Y axis
+        // Calculate camera offset with horizontal and vertical rotation
+        const cameraOffset = new THREE.Vector3(0, 0, -activeDistance);
         cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
         
-        // Apply vertical rotation (pitch) - orbit around the character
-        // Create a right vector for the current camera orientation
+        // Apply vertical rotation around right axis
         const rightVector = new THREE.Vector3(1, 0, 0);
         rightVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
-        
-        // Rotate the camera offset around the right axis to create vertical orbiting
         cameraOffset.applyAxisAngle(rightVector, cameraPitch);
         
-        // Position camera relative to character
-        idealCameraPos.current.copy(characterPos)
+        // Set ideal camera position
+        idealCameraPos.current
+            .copy(characterPos)
             .add(cameraOffset)
-            .setY(characterPos.y + activeHeight + cameraOffset.y); // Add the vertical offset from pitch
+            .setY(characterPos.y + activeHeight + cameraOffset.y);
     
-        // Create offset look-at target to position character in lower-left quadrant
-        // Calculate forward and right vectors relative to camera orientation
-        const forwardVector = new THREE.Vector3(0, 0, 1);
-        forwardVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
-        forwardVector.applyAxisAngle(rightVector, cameraPitch);
+        // FIXED: Use consistent look-at direction with shoulder offset
+        // Calculate where the character is "looking" based on their rotation
+        const forwardDirection = new THREE.Vector3(0, 0, 1); // Character's forward direction
+        forwardDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), characterRotation);
         
-        const upVector = new THREE.Vector3(0, 1, 0);
-        const rightCameraVector = new THREE.Vector3().crossVectors(forwardVector, upVector).normalize();
-        const upCameraVector = new THREE.Vector3().crossVectors(rightCameraVector, forwardVector).normalize();
+        // Apply camera pitch to the look direction
+        const pitchAdjustedForward = forwardDirection.clone();
+        pitchAdjustedForward.applyAxisAngle(rightVector, cameraPitch);
         
-        // Offset the look-at target to position character in lower-left quadrant
-        // Adjust offsets based on aiming state
-        const horizontalOffset = isAiming ? 1 : 2; // Less offset when aiming for more centered view
-        const verticalOffset = isAiming ? 0.5 : 1;  // Less vertical offset when aiming
+        // Add horizontal shoulder offset (looking slightly to the side of character)
+        const shoulderOffset = isAiming ? 0.3 : -0.8; // Less offset when aiming for precision
+        const shoulderShift = rightVector.clone().multiplyScalar(shoulderOffset);
         
-        idealLookAt.current.copy(characterPos)
+        // Set look-at point in front of character with shoulder offset
+        const lookDistance = 10; // How far ahead to look
+        idealLookAt.current
+            .copy(characterPos)
             .setY(characterPos.y + heightOffset)
-            .add(rightCameraVector.clone().multiplyScalar(horizontalOffset))
-            .add(upCameraVector.clone().multiplyScalar(verticalOffset));
+            .add(shoulderShift) // Add the sideways shift
+            .add(pitchAdjustedForward.multiplyScalar(lookDistance));
         
-        // Initialize camera position on first frame
+        // Initialize on first frame
         if (currentCameraPos.current.length() === 0) {
             currentCameraPos.current.copy(idealCameraPos.current);
             currentLookAt.current.copy(idealLookAt.current);
         }
         
-        // Smooth camera position interpolation (keep some smoothing for position)
+        // Smooth interpolation
         currentCameraPos.current.lerp(idealCameraPos.current, stiffness);
+        currentLookAt.current.lerp(idealLookAt.current, lookStiffness);
         
-        // Make look-at more responsive for precise aiming - use higher interpolation or direct assignment
-        const responsiveLookStiffness = Math.min(lookStiffness * 1.5, 0.95); // Boost responsiveness
-        currentLookAt.current.lerp(idealLookAt.current, responsiveLookStiffness);
-        
-        // Apply to camera
         camera.position.copy(currentCameraPos.current);
         camera.lookAt(currentLookAt.current);
     });
