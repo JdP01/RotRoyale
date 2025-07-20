@@ -96,10 +96,8 @@ export const Dino = ({
     // Animation hook
     const { updateAdvancedAnimations } = useDinoAnimations();
     
-    const isOnFloor = useRef(true);
-    
     // Get controller logic - only for local players
-    const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, isOnFloor, setIsJumping) : null;
+    const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping) : null;
     
     // Pass aiming state up to parent component
     useEffect(() => {
@@ -118,7 +116,6 @@ export const Dino = ({
     const handleCollisionEnter = ({ other }) => {
         console.log("colliding with", other.rigidBodyObject?.name);
         if (other.rigidBodyObject?.name === "floor") {
-            isOnFloor.current = true;
             setIsJumping(false);
             
             // Check for fall damage (only for local player)
@@ -134,9 +131,7 @@ export const Dino = ({
     };
 
     const handleCollisionExit = ({ other }) => {
-        if (other.rigidBodyObject?.name === "floor") {
-            isOnFloor.current = false;
-        }
+        // Floor collision exit no longer needed for jump logic
     };
 
     // Game Frame Loop 

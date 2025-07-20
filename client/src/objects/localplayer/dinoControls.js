@@ -1,11 +1,12 @@
 import { useKeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
+import {useRapier} from '@react-three/rapier';
 import * as THREE from "three";
 import { Controls } from "../world/GameCanvas";
 import { useEffect, useRef, useState } from 'react';
 import { usePlayerState } from "../../logic/PlayerState";
 
-export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
+export const useDinoControls = (bodyRef, setIsJumping) => {
     // Get camera reference
     const { camera } = useThree();
     
@@ -14,9 +15,45 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
 
     // Movement controls 
     const jump = () => {
+        if (!bodyRef.current) return;
         bodyRef.current.applyImpulse({x: 0, y: 25, z: 0});
         setIsJumping(true);
     }
+
+    // Raycasting for ground detection
+    const {rapier,world} = useRapier();
+
+    const isNearGround = () => {
+        const body = bodyRef.current;
+        if (!body) return false;
+
+        const pos = body.translation();
+        const rayOrigin = { x: pos.x, y: pos.y - 0.1, z: pos.z };
+        const rayDir = { x: 0, y: -1, z: 0 };
+        const ray = new rapier.Ray(rayOrigin, rayDir);
+        const maxDistance = 1;
+
+        // Exclude the character's own collider
+        const characterCollider = body.collider(0);
+        const hit = world.castRay(ray, maxDistance, true, undefined, undefined, characterCollider);
+
+        if (hit) {
+            const collider = hit.collider;
+            const parentRigidBody = collider.parent();
+            const objectInfo = parentRigidBody?.userData?.name || "Unnamed object";
+            
+            console.log("HIT DETECTED!");
+            console.log("- Object:", objectInfo);
+            console.log("- Distance (toi):", hit.toi);
+            console.log("- Hit collider handle:", collider.handle);
+            return true;
+            
+        }
+
+        console.log("No hit detected");
+        return false;
+    };
+
 
     const jumpPressed = useKeyboardControls((state) => state[Controls.jump]);
     const forwardPressed = useKeyboardControls((state) => state[Controls.forward]);
@@ -24,7 +61,6 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     const leftPressed = useKeyboardControls((state) => state[Controls.left]);
     const rightPressed = useKeyboardControls((state) => state[Controls.right]);
     const sprintPressed = useKeyboardControls((state) => state[Controls.sprint]);
-    //const shootPressed = useKeyboardControls((state) => state[Controls.shoot]);
     
     const dir = new THREE.Vector3();
     const [cameraRotation, setCameraRotation] = useState(0); // Camera/mouse rotation (yaw)
@@ -34,8 +70,6 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
     const sensitivity = 0.002;
 
     // Pointer lock setup
-    // Replace both the onMouseDown function and the separate shooting useEffect with this single handler:
-
     useEffect(() => {
         const canvas = document.querySelector('canvas');
         if (!canvas) return;
@@ -72,7 +106,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         const onMouseDown = (event) => {
             if (event.button === 0) { // Left mouse button
                 if (document.pointerLockElement !== canvas) {
-                    // Not locked yet - request pointer locsk
+                    // Not locked yet - request pointer lock
                     canvas.requestPointerLock();
                 } else {
                     // Already locked - handle shooting
@@ -130,10 +164,10 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             canvas.removeEventListener('contextmenu', onContextMenu);
         };
     }, [camera]); // Update dependencies to include camera
-
-// REMOVE the separate shooting useEffect completely - delete lines ~113-120
     
     const handleMovement = (delta, setIsMoving, setIsSprinting) => { 
+        if (!bodyRef.current) return; // Safety check
+        
         dir.set(0, 0, 0);
         let moving = false;
         let sprinting = false;
@@ -160,7 +194,6 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             moving = true;
             targetCharacterRotation = cameraRotation + Math.PI;
             // Face backward direction
-            
         }
         if (leftPressed) {
             dir.add(right);
@@ -174,30 +207,29 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             // Face right direction
             targetCharacterRotation = cameraRotation - Math.PI / 2;
         }
+        
         if (canSprint) {
-                sprinting = true;
-                // Consume stamina while sprinting
-                consumeStamina(50 * delta); // 50 stamina per second
-            }
+            sprinting = true;
+            // Consume stamina while sprinting
+            consumeStamina(50 * delta); // 50 stamina per second
+        }
 
         // Regenerate stamina when not sprinting
         if (!sprinting && stamina < 100) {
-            regenerateStamina(20 * delta); // 25 stamina per second
+            regenerateStamina(20 * delta); // 20 stamina per second
         }
         
-        // ...existing code for diagonal movement...
         // Handle diagonal movement - face the actual movement direction
         if ((forwardPressed || backPressed) && (leftPressed || rightPressed)) {
             let diagonalRotation = cameraRotation;
-            if(forwardPressed && (leftPressed && rightPressed)) {
+            
+            if (forwardPressed && (leftPressed && rightPressed)) {
                 // If both left and right are pressed with forward, no diagonal movement
-                diagonalRotation = cameraRotation + Math.PI;
-            }
-            else if (backPressed && (leftPressed && rightPressed)) {
-                // If both left and right are pressed with backward, no diagonal movement
                 diagonalRotation = cameraRotation;
-            }
-            else if (forwardPressed && leftPressed) {
+            } else if (backPressed && (leftPressed && rightPressed)) {
+                // If both left and right are pressed with backward, no diagonal movement
+                diagonalRotation = cameraRotation + Math.PI;
+            } else if (forwardPressed && leftPressed) {
                 // Forward + Left = 45° left of forward
                 diagonalRotation = cameraRotation + Math.PI / 4;
             } else if (forwardPressed && rightPressed) {
@@ -206,7 +238,6 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             } else if (backPressed && leftPressed) {
                 // Backward + Left = 45° left of backward
                 diagonalRotation = cameraRotation + Math.PI - Math.PI / 4;
-                
             } else if (backPressed && rightPressed) {
                 // Backward + Right = 45° right of backward
                 diagonalRotation = cameraRotation + Math.PI + Math.PI / 4;
@@ -216,7 +247,7 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
         }
         
         // Smoothly interpolate character rotation for natural turning
-        if (true) {
+        if (moving) {
             // Handle angle wrapping for smooth rotation
             let angleDiff = targetCharacterRotation - characterRotation;
             if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
@@ -227,11 +258,11 @@ export const useDinoControls = (bodyRef, isOnFloor, setIsJumping) => {
             setCharacterRotation(newRotation);
         }
         
-        if (jumpPressed && isOnFloor.current) {
+        // Jump logic - always works when jump is pressed
+        if (jumpPressed && isNearGround()) {
             jump();
             console.log("🦖 Jumping!");
         }
-
         
         setIsMoving(moving);
         setIsSprinting(sprinting && !isExhausted); // Only sprint if not exhausted
