@@ -24,22 +24,22 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
     const {rapier,world} = useRapier();
 
     const isNearGround = () => {
-        const body = bodyRef.current;
+        const body = bodyRef.current; 
         if (!body) return false;
 
         const pos = body.translation();
         const rayOrigin = { x: pos.x, y: pos.y - 0.1, z: pos.z };
         const rayDir = { x: 0, y: -1, z: 0 };
         const ray = new rapier.Ray(rayOrigin, rayDir);
-        const maxDistance = 1;
+        const maxDistance = 0.2;
 
         // Exclude the character's own collider
         const characterCollider = body.collider(0);
         const hit = world.castRay(ray, maxDistance, true, undefined, undefined, characterCollider);
 
         if (hit) {
-            const collider = hit.collider;
-            const parentRigidBody = collider.parent();
+            const collider = world.getCollider(hit);
+            const parentRigidBody = collider?.parent();
             const objectInfo = parentRigidBody?.userData?.name || "Unnamed object";
             
             console.log("HIT DETECTED!");
@@ -61,7 +61,8 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
     const leftPressed = useKeyboardControls((state) => state[Controls.left]);
     const rightPressed = useKeyboardControls((state) => state[Controls.right]);
     const sprintPressed = useKeyboardControls((state) => state[Controls.sprint]);
-    
+    const [jumpTriggered, setJumpTriggerd] = useState(false); // For right-click aiming 
+
     const dir = new THREE.Vector3();
     const [cameraRotation, setCameraRotation] = useState(0); // Camera/mouse rotation (yaw)
     const [cameraPitch, setCameraPitch] = useState(0); // Camera pitch (up/down)
@@ -246,24 +247,24 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
             targetCharacterRotation = diagonalRotation;
         }
         
-        // Smoothly interpolate character rotation for natural turning
-        if (moving) {
-            // Handle angle wrapping for smooth rotation
-            let angleDiff = targetCharacterRotation - characterRotation;
-            if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-            if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-            
-            const rotationSpeed = 10; // Adjust this to control turning speed
-            const newRotation = characterRotation + angleDiff * Math.min(1, delta * rotationSpeed);
-            setCharacterRotation(newRotation);
-        }
+       
+        // Handle angle wrapping for smooth rotation
+        let angleDiff = targetCharacterRotation - characterRotation;
+        if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+        
+        const rotationSpeed = 10; // Adjust this to control turning speed
+        const newRotation = characterRotation + angleDiff * Math.min(1, delta * rotationSpeed);
+        setCharacterRotation(newRotation);
+        
         
         // Jump logic - always works when jump is pressed
-        if (jumpPressed && isNearGround()) {
+        if (jumpPressed && isNearGround() && !jumpTriggered) {
             jump();
             console.log("🦖 Jumping!");
+            setJumpTriggered(true); // Reset right-click aiming when jumping
         }
-        
+        setJumpTriggerd(false); // Reset aiming state after jump
         setIsMoving(moving);
         setIsSprinting(sprinting && !isExhausted); // Only sprint if not exhausted
         
