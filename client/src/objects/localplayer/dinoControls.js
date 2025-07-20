@@ -28,10 +28,10 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
         if (!body) return false;
 
         const pos = body.translation();
-        const rayOrigin = { x: pos.x, y: pos.y - 0.1, z: pos.z };
+        const rayOrigin = { x: pos.x, y: pos.y, z: pos.z };
         const rayDir = { x: 0, y: -1, z: 0 };
         const ray = new rapier.Ray(rayOrigin, rayDir);
-        const maxDistance = 0.2;
+        const maxDistance = 0.16; //precise 
 
         // Exclude the character's own collider
         const characterCollider = body.collider(0);
