@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { RigidBody } from '@react-three/rapier';
+import { RigidBody,CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 
 // Import map layout data
@@ -174,7 +174,10 @@ const BeachMap = () => {
           castShadow 
           receiveShadow 
         />
+      <CuboidCollider args={[1, 0.5, 1]} />
+
       </RigidBody>
+
 
       {/* Water mesh */}
       <mesh position={[0, -1.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>

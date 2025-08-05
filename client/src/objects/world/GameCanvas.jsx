@@ -28,12 +28,8 @@ export const OtherPlayer = ({ playerData, userSession }) => {
             userSession={userSession}
             isNetworkedPlayer={true}
             networkPosition={playerData.position}
-            networkRotation={playerData.rotation + (Math.PI)} // Adjust rotation to match dino's facing direction
-            networkAnimationState={{
-                isMoving: playerData.position ? true : false,
-                isSprinting: false,
-                isJumping: false
-            }}
+            networkRotation={playerData.rotation}
+            networkButtonStates={playerData.buttonStates} // Pass button states instead of animation state
         />
     );
 };
@@ -52,6 +48,14 @@ const GameLogic = ({
   otherPlayersData
 }) => {
   const lastSentTime = useRef(0);
+  const [localPlayerButtonStates, setLocalPlayerButtonStates] = useState({
+    forward: false,
+    back: false,
+    left: false,
+    right: false,
+    jump: false,
+    sprint: false
+  });
   
   // Get raycast visualization state and player state functions
   const { raycastVisible, raycastStart, raycastEnd, enemyRaycastVisible, enemyRaycastStart, enemyRaycastEnd, setBroadcastCallback, takeDamage, showEnemyRaycast } = usePlayerState();
@@ -284,7 +288,8 @@ const GameLogic = ({
         y: position.y,
         z: position.z
       },
-      rotation: dinoRotation
+      rotation: dinoRotation,
+      buttonStates: localPlayerButtonStates // Send button states instead of calculated animation state
     };
 
     try {
@@ -323,6 +328,7 @@ const GameLogic = ({
         onRotationChange={onRotationChange}
         onCameraPitchChange={onCameraPitchChange}
         onAimingChange={onAimingChange}
+        onButtonStatesChange={setLocalPlayerButtonStates} // Pass button states callback instead
         castShadow
         userSession={userSession}
         currentMatch={currentMatch}
@@ -457,6 +463,7 @@ export default function GameCanvas({
                 [gameUpdate.playerId]: {
                   position: gameUpdate.position,
                   rotation: gameUpdate.rotation,
+                  buttonStates: gameUpdate.buttonStates || { forward: false, back: false, left: false, right: false, jump: false, sprint: false }, // Store button states instead
                   username: gameUpdate.username,
                   lastUpdate: Date.now()
                 }

@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 
-export const RaycastVisualizer = ({ isVisible, startPosition, endPosition, duration = 1500, color = "red" }) => {
+export const RaycastVisualizer = ({ isVisible, startPosition, endPosition, duration = 5000, color = "red" }) => {
   const lineRef = useRef();
   const materialRef = useRef();
   const [opacity, setOpacity] = useState(1);

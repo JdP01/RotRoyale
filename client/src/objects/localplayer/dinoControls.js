@@ -61,6 +61,28 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
     const leftPressed = useKeyboardControls((state) => state[Controls.left]);
     const rightPressed = useKeyboardControls((state) => state[Controls.right]);
     const sprintPressed = useKeyboardControls((state) => state[Controls.sprint]);
+    
+    // Track button states for networking
+    const [buttonStates, setButtonStates] = useState({
+        forward: false,
+        back: false,
+        left: false,
+        right: false,
+        jump: false,
+        sprint: false
+    });
+    
+    // Update button states when keys change
+    useEffect(() => {
+        setButtonStates({
+            forward: forwardPressed,
+            back: backPressed,
+            left: leftPressed,
+            right: rightPressed,
+            jump: jumpPressed,
+            sprint: sprintPressed
+        });
+    }, [forwardPressed, backPressed, leftPressed, rightPressed, jumpPressed, sprintPressed]);
     const [jumpTriggered, setJumpTriggered] = useState(false); // For right-click aiming 
 
     const dir = new THREE.Vector3();
@@ -103,14 +125,12 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
             }
         };
 
-        // COMBINED mouse handler - handles both pointer lock AND shooting
-        const onMouseDown = (event) => {
+        const onMouseDown = (event) => { //handle leftclick
             if (event.button === 0) { // Left mouse button
-                if (document.pointerLockElement !== canvas) {
-                    // Not locked yet - request pointer lock
+                if (document.pointerLockElement !== canvas) { //if mouse is not pointerlocked yet lock it 
                     canvas.requestPointerLock();
-                } else {
-                    // Already locked - handle shooting
+                } 
+                else {      //if mouse is locked then shoot
                     console.log("🔫 SHOOTING!");
                     
                     // Raycast from camera center
@@ -129,7 +149,8 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
                         fireRaycast(cameraPosition, rayEnd);
                     }
                 }
-            } else if (event.button === 2) { // Right mouse button
+            } 
+            if (event.button === 2) { // Right mouse button
                 if (document.pointerLockElement === canvas) {
                     setIsAiming(true);
                 }
@@ -288,6 +309,7 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
         cameraPitch,        // For camera pitch (up/down)
         characterRotation,  // For character visual rotation
         isAiming,          // For aiming state
+        buttonStates,      // Current button states for networking
         jumpPressed,
         forwardPressed,
         backPressed,

@@ -12,8 +12,9 @@ export const Dino = ({
     onRotationChange, 
     onCameraPitchChange,
     onAimingChange,
+    onButtonStatesChange, // New callback for sending button states to network
     isNetworkedPlayer = false, 
-    networkAnimationState,
+    networkButtonStates, // Button states from network instead of animation states
     networkPosition,
     networkRotation
 }) => { 
@@ -74,13 +75,14 @@ export const Dino = ({
         };
     }, [Body, Head, LeftLeg, armLeft, tail, weapon]);
 
-    // Animation states - use network states if provided, otherwise use local states
+    // Animation states - use local states for both local and networked players
+    // Networked players will calculate their own animation states from button states
     const [isMoving, setIsMoving] = useState(false);
     const [isSprinting, setIsSprinting] = useState(false);
     const [isJumping, setIsJumping] = useState(false);
 
-    // Use network animation states if this is a networked player
-    const effectiveAnimationState = isNetworkedPlayer ? networkAnimationState : {
+    // Always use local animation states - networked players calculate from button states
+    const effectiveAnimationState = {
         isMoving,
         isSprinting,
         isJumping
@@ -96,8 +98,71 @@ export const Dino = ({
     // Animation hook
     const { updateAdvancedAnimations } = useDinoAnimations();
     
-    // Get controller logic - only for local players
+    // Get controller logic - for local players use actual controls, for networked use simulated controls
     const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping) : null;
+    
+    // For networked players, simulate movement states based on button states
+    useEffect(() => {
+        if (isNetworkedPlayer && networkButtonStates) {
+            const moving = networkButtonStates.forward || networkButtonStates.back || 
+                          networkButtonStates.left || networkButtonStates.right;
+            const sprinting = moving && networkButtonStates.sprint;
+            const jumping = networkButtonStates.jump;
+            
+            setIsMoving(moving);
+            setIsSprinting(sprinting);
+            setIsJumping(jumping);
+        }
+    }, [isNetworkedPlayer, networkButtonStates]);
+    
+    // Character rotation state for networked players (separate from camera rotation)
+    const [networkedCharacterRotation, setNetworkedCharacterRotation] = useState(0);
+    
+    // Calculate character rotation for networked players based on button states
+    useEffect(() => {
+        if (isNetworkedPlayer && networkButtonStates && networkRotation !== undefined) {
+            const { forward, back, left, right } = networkButtonStates;
+            const cameraRotation = networkRotation; // Use network rotation as "camera" direction
+            
+            // Calculate character visual rotation based on movement direction (same logic as local player)
+            let targetCharacterRotation = cameraRotation;
+            
+            if (forward && !back && !left && !right) {
+                // Moving forward - face forward direction
+                targetCharacterRotation = cameraRotation;
+            } else if (back && !forward && !left && !right) {
+                // Moving backward - face backward direction
+                targetCharacterRotation = cameraRotation + Math.PI;
+            } else if (left && !right && !forward && !back) {
+                // Moving left - face left direction
+                targetCharacterRotation = cameraRotation + Math.PI / 2;
+            } else if (right && !left && !forward && !back) {
+                // Moving right - face right direction
+                targetCharacterRotation = cameraRotation - Math.PI / 2;
+            } else if (forward && left && !back && !right) {
+                // Forward + Left diagonal
+                targetCharacterRotation = cameraRotation + Math.PI / 4;
+            } else if (forward && right && !back && !left) {
+                // Forward + Right diagonal
+                targetCharacterRotation = cameraRotation - Math.PI / 4;
+            } else if (back && left && !forward && !right) {
+                // Backward + Left diagonal
+                targetCharacterRotation = cameraRotation + Math.PI - Math.PI / 4;
+            } else if (back && right && !forward && !left) {
+                // Backward + Right diagonal  
+                targetCharacterRotation = cameraRotation + Math.PI + Math.PI / 4;
+            }
+            
+            setNetworkedCharacterRotation(targetCharacterRotation);
+        }
+    }, [isNetworkedPlayer, networkButtonStates, networkRotation]);
+    
+    // For local players, send button states to network
+    useEffect(() => {
+        if (!isNetworkedPlayer && controls && onButtonStatesChange) {
+            onButtonStatesChange(controls.buttonStates);
+        }
+    }, [controls?.buttonStates, isNetworkedPlayer, onButtonStatesChange]);
     
     // Pass aiming state up to parent component
     useEffect(() => {
@@ -171,6 +236,7 @@ export const Dino = ({
             mainGroupRef.current.position.y = bodyBobHeight;
             
             if (!isNetworkedPlayer && controls) {
+                // Local player rotation logic
                 const quaternion = new THREE.Quaternion();
                 quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), controls.characterRotation);
                 bodyRef.current.setRotation(quaternion, true);
@@ -182,6 +248,11 @@ export const Dino = ({
                 if (onCameraPitchChange) {
                     onCameraPitchChange(controls.cameraPitch);
                 }
+            } else if (isNetworkedPlayer) {
+                // Networked player rotation logic - use calculated character rotation
+                const quaternion = new THREE.Quaternion();
+                quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), networkedCharacterRotation);
+                bodyRef.current.setRotation(quaternion, true);
             }
         }
     });
