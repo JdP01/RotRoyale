@@ -36,15 +36,14 @@ export const useDinoAnimations = () => {
         if (mainGroupRef.current) {
             if (isJumping) {
                 // Apply lerping to body rotation for smoother transitions
-                const targetRotX = -0.2;
-                mainGroupRef.current.rotation.x += (targetRotX - mainGroupRef.current.rotation.x) * 0.15;
+                const targetRotX = -0.1;
+                mainGroupRef.current.rotation.x += (targetRotX - mainGroupRef.current.rotation.x) * 0.5;
             } else {
-                mainGroupRef.current.rotation.x += (0 - mainGroupRef.current.rotation.x) * 0.15;
+                mainGroupRef.current.rotation.x += (0 - mainGroupRef.current.rotation.x) * 0.6;
             }
         }
         
         // Track state changes for smoother transitions
-        const startedMoving = !prevMovingState.current.isMoving && isMoving;
         const stoppedMoving = prevMovingState.current.isMoving && !isMoving;
         
         // Update animation angles only when moving
@@ -147,7 +146,7 @@ export const useDinoAnimations = () => {
                 // Gradually reduce body bob when stopping
                 bodyBobHeight.current *= 0.9;
             }
-        }
+        } 
         
         // Always reset head rotation during jumps to avoid conflicts
         if (isJumping && headRef.current) {

@@ -16,8 +16,8 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
     // Movement controls 
     const jump = () => {
         if (!bodyRef.current) return;
-        bodyRef.current.applyImpulse({x: 0, y: 25, z: 0});
         setIsJumping(true);
+        bodyRef.current.applyImpulse({x: 0, y: 25, z: 0});
     }
 
     // Raycasting for ground detection
@@ -61,7 +61,7 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
     const leftPressed = useKeyboardControls((state) => state[Controls.left]);
     const rightPressed = useKeyboardControls((state) => state[Controls.right]);
     const sprintPressed = useKeyboardControls((state) => state[Controls.sprint]);
-    const [jumpTriggered, setJumpTriggerd] = useState(false); // For right-click aiming 
+    const [jumpTriggered, setJumpTriggered] = useState(false); // For right-click aiming 
 
     const dir = new THREE.Vector3();
     const [cameraRotation, setCameraRotation] = useState(0); // Camera/mouse rotation (yaw)
@@ -260,11 +260,14 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
         
         // Jump logic - always works when jump is pressed
         if (jumpPressed && isNearGround() && !jumpTriggered) {
+            setJumpTriggered(true); // Reset right-click aiming when jumping
             jump();
             console.log("🦖 Jumping!");
-            setJumpTriggered(true); // Reset right-click aiming when jumping
         }
-        setJumpTriggerd(false); // Reset aiming state after jump
+
+        if(!isNearGround()) { //made jumping triggered is only set to false when the player actually jumps 
+            setJumpTriggered(false); 
+        }
         setIsMoving(moving);
         setIsSprinting(sprinting && !isExhausted); // Only sprint if not exhausted
         
