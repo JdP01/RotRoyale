@@ -632,7 +632,7 @@ export default function GameCanvas({
           shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }
         }}>
           <Suspense fallback={null}>
-            <Physics gravity={[0, -9.81, 0]} timeStep={1 / 300} >
+            <Physics gravity={[0, -9.81, 0]} timeStep={1 /300} >
               <OrbitControls />
 
               <GameEnvironment />

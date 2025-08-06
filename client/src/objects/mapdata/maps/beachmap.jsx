@@ -1,80 +1,54 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { RigidBody,CuboidCollider } from '@react-three/rapier';
+import { RigidBody, CuboidCollider, CylinderCollider, BallCollider, CapsuleCollider } from '@react-three/rapier';
 import * as THREE from 'three';
-
-// Import map layout data
 import mapData from '../instructions/beachmap.json';
-
-// Import individual prop components  
-import { CactusProp } from '../props/cactus_1.js';
-import { PalmTreeProp } from '../props/palmtree_1.js';
-import { TreeProp } from '../props/tree_1.js';
-
-// Preload main map model (props handle their own preloading)
-useGLTF.preload('/objects/Map2.glb');
 
 const InstancedProps = ({ propType, instances }) => {
   const instancedMeshRef = useRef();
   
+  // Load scenes directly
+  const scenes = {
+    cactus: useGLTF('/objects/cactus.glb').scene,
+    palmtree: useGLTF('/objects/palmTree.glb').scene,
+    tree: useGLTF('/objects/game_tree.glb').scene
+  };
+
   const { geometry, material } = useMemo(() => {
-    try {
-      switch (propType) {
-        case 'cactus':
-          return CactusProp();
-        case 'palmtree':
-          return PalmTreeProp();
-        case 'tree':
-          return TreeProp();
-        default:
-          throw new Error(`Unknown prop type: ${propType}`);
+    const scene = scenes[propType];
+    if (!scene) return { geometry: null, material: null };
+    
+    let geometry = null, material = null;
+    scene.traverse((child) => {
+      if (child.isMesh && !geometry) {
+        geometry = child.geometry;
+        material = child.material;
       }
-    } catch (error) {
-      console.warn(`Error loading asset for ${propType}:`, error);
-      return { geometry: null, material: null };
-    }
+    });
+    return { geometry, material };
   }, [propType]);
 
-  const instanceCount = instances.length;
-
-  // Create transformation matrices for each instance
   useEffect(() => {
     if (!instancedMeshRef.current || !geometry || !material) return;
 
     const tempMatrix = new THREE.Matrix4();
-    const tempPosition = new THREE.Vector3();
-    const tempRotation = new THREE.Euler();
-    const tempScale = new THREE.Vector3();
-
     instances.forEach((instance, index) => {
-      // Set position, rotation, and scale
-      tempPosition.set(...instance.position);
-      tempRotation.set(...instance.rotation);
-      tempScale.set(...instance.scale);
-
-      // Create transformation matrix
       tempMatrix.compose(
-        tempPosition,
-        new THREE.Quaternion().setFromEuler(tempRotation),
-        tempScale
+        new THREE.Vector3(...instance.position),
+        new THREE.Quaternion().setFromEuler(new THREE.Euler(...instance.rotation)),
+        new THREE.Vector3(...instance.scale)
       );
-
-      // Apply matrix to instance
       instancedMeshRef.current.setMatrixAt(index, tempMatrix);
     });
-
-    // Update the instanced mesh
     instancedMeshRef.current.instanceMatrix.needsUpdate = true;
   }, [instances, geometry, material]);
 
-  if (!geometry || !material || instanceCount === 0) {
-    return null;
-  }
+  if (!geometry || !material || instances.length === 0) return null;
 
   return (
     <instancedMesh
       ref={instancedMeshRef}
-      args={[geometry, material, instanceCount]}
+      args={[geometry, material, instances.length]}
       castShadow
       receiveShadow
     />
@@ -84,45 +58,97 @@ const InstancedProps = ({ propType, instances }) => {
 const InstancedPropsWithPhysics = ({ propType, instances }) => {
   if (instances.length === 0) return null;
 
-  const { geometry } = useMemo(() => {
-    try {
-      switch (propType) {
-        case 'cactus':
-          return CactusProp();
-        case 'palmtree':
-          return PalmTreeProp();
-        case 'tree':
-          return TreeProp();
-        default:
-          throw new Error(`Unknown prop type: ${propType}`);
+  // Define multiple colliders with different shapes for each prop type
+  const colliderConfigs = {
+    cactus: [
+      { 
+        type: 'capsule', //Main Stem
+        position: [-0.06, 0.5, 0.055], 
+        args: [2, 0.4] 
+      },
+      { 
+        type: 'capsule', 
+        position: [-0.06, 0.75, -0.6], 
+        args: [0.2, 0.35], // height, radius
+        rotation: [0, Math.PI / 2, Math.PI / 2] // horizontal
+      },
+      { 
+        type: 'capsule', 
+        position: [-0.03, 0.3,1], 
+        args: [0.3, 0.3], // height, radius
+        rotation: [0, Math.PI / 2, Math.PI / 2] // horizontal
       }
-    } catch (error) {
-      console.warn(`Error loading physics geometry for ${propType}:`, error);
-      return { geometry: null };
+    ],
+    palmtree: [
+      { 
+        type: 'cylinder', 
+        position: [-0.6, 2, -0.1], 
+        args: [8, 0.8] // trunk 
+      }
+    ],
+    tree: [
+      { 
+        type: 'cylinder', 
+        position: [-1.8, -2, -0.6], 
+        args: [6, 1.5] // trunk
+      },
+      { 
+        type: 'ball', 
+        position: [-1.8, 8, -0.6], 
+        args: [7] // main canopy
+      },
+      { 
+        type: 'cuboid', 
+        position: [-1.75, -6.75, -0.6], 
+        args: [3.6,1,1] // Root 1a
+      },
+      { 
+        type: 'cuboid', 
+        position: [-1.75, -6.75,-0.37], 
+        args: [1,1,3.35] // Root 1b
+      }
+    ]
+  };
+
+  const propColliders = colliderConfigs[propType] || [
+    { type: 'cylinder', position: [0, 2, 0], args: [4, 1] }
+  ];
+
+  // Render the appropriate collider component based on type
+  const renderCollider = (collider, index) => {
+    const commonProps = {
+      position: collider.position,
+      rotation: collider.rotation,
+      args: collider.args
+    };
+
+    switch (collider.type) {
+      case 'cylinder':
+        return <CylinderCollider key={index} {...commonProps} />;
+      case 'ball':
+        return <BallCollider key={index} {...commonProps} />;
+      case 'capsule':
+        return <CapsuleCollider key={index} {...commonProps} />;
+      case 'cuboid':
+      default:
+        return <CuboidCollider key={index} {...commonProps} />;
     }
-  }, [propType]);
+  };
 
   return (
     <>
       {instances.map((instance) => (
         <RigidBody
           key={instance.id}
-          colliders="hull"
           type="fixed"
-          name={`${propType}_${instance.id}`}
           position={instance.position}
           rotation={instance.rotation}
           friction={1}
           restitution={0}
         >
-          {/* Invisible mesh for physics collision */}
-          <mesh visible={false} scale={instance.scale}>
-            {geometry && <primitive object={geometry} />}
-          </mesh>
+          {propColliders.map((collider, index) => renderCollider(collider, index))}
         </RigidBody>
       ))}
-      
-      {/* Visible instanced mesh for rendering */}
       <InstancedProps propType={propType} instances={instances} />
     </>
   );
@@ -131,22 +157,15 @@ const InstancedPropsWithPhysics = ({ propType, instances }) => {
 const BeachMap = () => {
   const { scene: gameMap } = useGLTF(mapData.mapFile);
 
-  // Group instances by prop type for efficient rendering
   const groupedInstances = useMemo(() => {
     const groups = {};
-    
     mapData.instances.forEach((instance) => {
-      if (!groups[instance.type]) {
-        groups[instance.type] = [];
-      }
+      if (!groups[instance.type]) groups[instance.type] = [];
       groups[instance.type].push(instance);
     });
-
-    console.log('Grouped instances for instanced rendering:', groups);
     return groups;
   }, []);
 
-  // Set up shadows on the main map
   useEffect(() => {
     gameMap.traverse((child) => {
       if (child.isMesh) {
@@ -156,17 +175,16 @@ const BeachMap = () => {
     });
   }, [gameMap]);
 
+  const walls = [
+    { pos: [58, 2, 0], args: [1, 100, 116] },
+    { pos: [-58, 2, 0], args: [1, 100, 116] },
+    { pos: [0, 2, 58], args: [116, 100, 1] },
+    { pos: [0, 2, -58], args: [116, 100, 1] }
+  ];
+
   return (
     <>
-      {/* Main map mesh with physics */}
-      <RigidBody
-        colliders="trimesh"
-        type="fixed"
-        name="floor"
-        interpolate={true}
-        friction={1}
-        restitution={0}
-      >
+      <RigidBody colliders="trimesh" type="fixed" name="floor" friction={1} restitution={0}>
         <primitive 
           object={gameMap} 
           scale={mapData.mapScale}
@@ -174,12 +192,17 @@ const BeachMap = () => {
           castShadow 
           receiveShadow 
         />
-      <CuboidCollider args={[1, 0.5, 1]} />
-
       </RigidBody>
 
+      {walls.map((wall, i) => (
+        <RigidBody key={i} type="fixed" colliders="cuboid" position={wall.pos}>
+          <mesh>
+            <boxGeometry args={wall.args} />
+            <meshStandardMaterial color="blue" transparent opacity={0.1} depthWrite={false}/>
+          </mesh>
+        </RigidBody>
+      ))}
 
-      {/* Water mesh */}
       <mesh position={[0, -1.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[1000, 1000]} />
         <meshStandardMaterial 
@@ -192,7 +215,6 @@ const BeachMap = () => {
         />
       </mesh>
 
-      {/* Render all prop types using instanced meshes */}
       {Object.entries(groupedInstances).map(([propType, instances]) => (
         <InstancedPropsWithPhysics
           key={propType}
