@@ -15,50 +15,29 @@
       "id": "cactus_002",
       "type": "cactus",
       "position": [-35, 1, -25],
-      "rotation": [0, 0.785, 0],
-      "scale": [0.35, 0.35, 0.35]
+      "rotation": [0, 4, 0],
+      "scale": [0.4, 0.4, 0.4]
     },
     {
       "id": "cactus_003",
       "type": "cactus",
       "position": [-30, -0.1, -53],
       "rotation": [0, -0.523, 0],
-      "scale": [0.28, 0.28, 0.28]
-    },
-    {
-      "id": "cactus_004",
-      "type": "cactus",
-      "position": [0, -0.1, -30],
-      "rotation": [0, 2.094, 0],
-      "scale": [0.32, 0.32, 0.32]
+      "scale": [0.4, 0.4, 0.4]
     },
     {
       "id": "cactus_005",
       "type": "cactus",
-      "position": [-10, -0.1, -20],
-      "rotation": [0, -1.571, 0],
-      "scale": [0.29, 0.29, 0.29]
+      "position": [-50, 2, -56],
+      "rotation": [0, 0.261, 0],
+      "scale": [0.4, 0.4, 0.4]
     },
     {
       "id": "cactus_006",
       "type": "cactus",
-      "position": [-50, 1, -18],
-      "rotation": [0, 0.261, 0],
-      "scale": [0.33, 0.33, 0.33]
-    },
-    {
-      "id": "cactus_007",
-      "type": "cactus",
       "position": [-45, 2, -45],
       "rotation": [0, -2.094, 0],
       "scale": [0.27, 0.27, 0.27]
-    },
-    {
-      "id": "cactus_008",
-      "type": "cactus",
-      "position": [-5, -0.1, -50],
-      "rotation": [0, 1.309, 0],
-      "scale": [0.31, 0.31, 0.31]
     },
     {
       "id": "palmtree_001",
@@ -105,7 +84,7 @@
     {  
       "id": "tree_001",
       "type": "tree",
-      "position": [30, 7, -45],
+      "position": [30, 4, -45],
       "rotation": [0, 0.523, 0],
       "scale": [3,3,3]
     },
@@ -156,6 +135,48 @@
       "type": "tree",
       "position": [-15, 4.2, 25],
       "rotation": [0, 1.571, 0],
+      "scale": [3,3,3]
+    },
+    {  
+      "id": "tree_009",
+      "type": "tree",
+      "position": [50, 6, -45],
+      "rotation": [0, 3, 0],
+      "scale": [3,3,3]
+    },
+    {  
+      "id": "tree_010",
+      "type": "tree",
+      "position": [40, 7, -35],
+      "rotation": [0, 3, 0],
+      "scale": [3,3,3]
+    },
+    {  
+      "id": "tree_011",
+      "type": "tree",
+      "position": [54, 6, -30],
+      "rotation": [0, 1, 0],
+      "scale": [3,3,3]
+    },
+    {  
+      "id": "tree_012",
+      "type": "tree",
+      "position": [39, 5, -48],
+      "rotation": [0, 3, 0],
+      "scale": [3,3,3]
+    },
+    {  
+      "id": "tree_013",
+      "type": "tree",
+      "position": [29, 3, -31],
+      "rotation": [0, 3, 0],
+      "scale": [3,3,3]
+    },
+    {  
+      "id": "tree_014",
+      "type": "tree",
+      "position": [41, 5, -21],
+      "rotation": [0, 3, 0],
       "scale": [3,3,3]
     }
   ]

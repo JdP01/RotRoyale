@@ -87,25 +87,15 @@ const InstancedPropsWithPhysics = ({ propType, instances }) => {
       }
     ],
     tree: [
-      { 
-        type: 'cylinder', 
+      {
+        type: 'cuboid',
         position: [-1.8, -2, -0.6], 
-        args: [6, 1.5] // trunk
+        args: [1.4,6,1.4]
       },
       { 
         type: 'ball', 
         position: [-1.8, 8, -0.6], 
         args: [7] // main canopy
-      },
-      { 
-        type: 'cuboid', 
-        position: [-1.75, -6.75, -0.6], 
-        args: [3.6,1,1] // Root 1a
-      },
-      { 
-        type: 'cuboid', 
-        position: [-1.75, -6.75,-0.37], 
-        args: [1,1,3.35] // Root 1b
       }
     ]
   };

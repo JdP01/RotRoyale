@@ -31,7 +31,7 @@ export function CameraRig({
         
         // Adjust camera distance for aiming (closer when aiming)
         const activeDistance = isAiming ? distance * 0.4 : distance;
-        const activeHeight = isAiming ? height * 0.8 : height;
+        const activeHeight = isAiming ? height * 0.82 : height;
         
         // Calculate camera offset with horizontal and vertical rotation
         const cameraOffset = new THREE.Vector3(0, 0, -activeDistance);
@@ -58,7 +58,7 @@ export function CameraRig({
         pitchAdjustedForward.applyAxisAngle(rightVector, cameraPitch);
         
         // Add horizontal shoulder offset (looking slightly to the side of character)
-        const shoulderOffset = isAiming ? 0.3 : -0.8; // Less offset when aiming for precision
+        const shoulderOffset = isAiming ? -0.66: -0.8; // Less offset when aiming for precision
         const shoulderShift = rightVector.clone().multiplyScalar(shoulderOffset);
         
         // Set look-at point in front of character with shoulder offset
