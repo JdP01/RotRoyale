@@ -289,6 +289,7 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
         if(!isNearGround()) { //made jumping triggered is only set to false when the player actually jumps 
             setJumpTriggered(false); 
         }
+        
         setIsMoving(moving);
         setIsSprinting(sprinting && !isExhausted); // Only sprint if not exhausted
         

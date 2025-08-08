@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import './styling/index.css';
 import GameCanvas from './objects/world/GameCanvas';
 import LoginPage from './ui/LoginPage';
-import { MenuUI, MatchmakingUIWrapper } from './ui/GameUI';
+import { MenuUI, MatchmakingUIWrapper } from './ui/mainMenu';
 
 export default function App() { 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -121,34 +121,14 @@ export default function App() {
   // Menu UI
   if (gameState === 'menu') {
     return (
-      <>
-        <div style={{
-          position: 'absolute', 
-          top: '10px', 
-          right: '10px', 
-          zIndex: 1000,
-          background: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          padding: '10px',
-          borderRadius: '5px'
-        }}>
-          <p>Welcome, {userSession?.username || 'Player'}!</p>
-          <button onClick={handleLogout} style={{
-            background: '#ff4444',
-            color: 'white',
-            border: 'none',
-            padding: '5px 10px',
-            borderRadius: '3px',
-            cursor: 'pointer'
-          }}>
-            Logout
-          </button>
-        </div>
-        <MenuUI
-          startSinglePlayer={startSinglePlayer}
-          startMultiplayer={startMultiplayer}
-        />
-      </>
+      <MenuUI
+        startSinglePlayer={startSinglePlayer}
+        startMultiplayer={startMultiplayer}
+        onLogout={handleLogout}
+        userSession={userSession}
+        onMatchFound={handleMatchFound}
+        onMatchmakingError={handleMatchmakingError}
+      />
     );
   }
 

@@ -41,6 +41,246 @@
     background: #2196f3;
     color: white;
   }
+
+  /* New 3D Menu Styles */
+  .new-game-menu {
+    width: 100vw;
+    height: 100vh;
+    background: url('/images/DinoConceptArt/background1.png') center center / cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+    max-height: 100vh;
+  }
+
+  .top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    z-index: 1000;
+    flex-shrink: 0;
+    min-height: 60px;
+  }
+
+  .dropdown-container {
+    position: relative;
+  }
+
+  .hamburger-menu {
+    background: rgba(255, 255, 255, 0);
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    backdrop-filter: blur(10px);
+  }
+
+  .hamburger-menu span {
+    width: 28px;
+    height: 4px;
+    background: white;
+    border-radius: 2px;
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: 70px;
+    left: 0;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 8px;
+    padding: 15px;
+    min-width: 160px;
+    backdrop-filter: blur(10px);
+  }
+
+  .dropdown-item {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: white;
+    padding: 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+
+  .dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .dropdown-item.logout-btn {
+    color: #ff4444;
+  }
+
+  .username-display {
+    color: rgb(255, 255, 255);
+    padding: 12px 24px;
+    font-weight: bold;
+    backdrop-filter: blur(10px);
+  }
+
+  .store-button {
+    background: rgba(0, 0, 0, 0.729);
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 24px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .character-carousel-container {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .character-canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    transition: background 0.3s ease;
+  }
+
+  .carousel-arrow:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .carousel-arrow-left {
+    left: 50px;
+  }
+
+  .carousel-arrow-right {
+    right: 50px;
+  }
+
+  .character-name {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .bottom-section {
+    padding: 20px 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    min-height: 140px;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .start-game-button {
+    background: rgb(50, 146, 255);
+    border: none;
+    color: white;
+    padding: 15px 50px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .start-game-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .game-mode-selection {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .back-to-menu-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    font-size: 14px;
+  }
+
+  .game-mode-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .game-mode-button {
+    border: none;
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+  }
+
+  .game-mode-button:hover {
+    transform: translateY(-2px);
+  }
+
+  .game-mode-button.single-player-button {
+    background: #4CAF50;
+    color: white;
+  }
+
+  .game-mode-button.multiplayer-button {
+    background: #2196F3;
+    color: white;
+  }
   
   .matchmaking-container {
     width: 100vw;
@@ -111,6 +351,116 @@
     border-radius: 4px;
     cursor: pointer;
     margin-top: 10px;
+    font-size: 12px;
+  }
+
+  /* Matchmaking Section Styles */
+  .matchmaking-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .matchmaking-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .matchmaking-button {
+    border: none;
+    color: white;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    min-width: 180px;
+    max-width: 250px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .matchmaking-button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .matchmaking-button:active {
+    transform: translateY(0px) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .matchmaking-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .matchmaking-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .progress-bar {
+    width: 250px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #2196F3);
+    transition: width 1s ease;
+    border-radius: 3px;
+  }
+
+  .search-status {
+    color: white;
+    font-size: 12px;
+    opacity: 0.8;
+    margin: 0;
+    text-align: center;
+  }
+
+  .players-found {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: white;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    margin-top: 8px;
+    max-width: 300px;
+  }
+
+  .players-found h4 {
+    margin: 0 0 8px 0;
+    color: #4CAF50;
+    font-size: 14px;
+  }
+
+  .players-found ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .players-found li {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 2px 0;
+    border-radius: 4px;
     font-size: 12px;
   }
   

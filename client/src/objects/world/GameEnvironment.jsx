@@ -2,7 +2,7 @@ import React from 'react';
 import { Sky } from '@react-three/drei';
 import BeachMap from '../mapdata/maps/beachmap.jsx';
 
-const lightPos = [100, 5, 100];
+const lightPos = [10, 120, 100];
 
 const GameEnvironment = () => {
   return (

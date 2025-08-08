@@ -186,22 +186,39 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
    * This removes us from the matchmaking queue
    */
   const cancelMatchmaking = async () => {
-    // Make sure we have a connection and a ticket to cancel
-    if (!userSession?.socket || !matchTicket) return;
+    // Make sure we have a connection
+    if (!userSession?.socket) {
+      console.warn("No socket connection available for cancelling matchmaking");
+      return;
+    }
+
+    console.log("Attempting to cancel matchmaking. Current ticket:", matchTicket);
 
     try {
-      // Tell the server to remove us from the matchmaking queue
-      await userSession.socket.removeMatchmaker(matchTicket);
+      // If we have a ticket, use it to remove from matchmaker
+      if (matchTicket) {
+        await userSession.socket.removeMatchmaker(matchTicket);
+        console.log("Matchmaking cancelled with ticket:", matchTicket);
+      } else {
+        console.log("No ticket available, but resetting search state");
+      }
       
-      // Reset all our searching state
+      // Reset all our searching state regardless of whether we had a ticket
       setIsSearching(false);
       setSearchStartTime(null);
       setMatchTicket(null);
       setElapsedTime(0);
+      setPlayersInMatch([]);
       
-      console.log("Matchmaking cancelled");
+      console.log("Matchmaking cancelled successfully");
     } catch (error) {
       console.error("Error cancelling matchmaking:", error);
+      // Even if there's an error, we should still reset our local state
+      setIsSearching(false);
+      setSearchStartTime(null);
+      setMatchTicket(null);
+      setElapsedTime(0);
+      setPlayersInMatch([]);
     }
   };
 

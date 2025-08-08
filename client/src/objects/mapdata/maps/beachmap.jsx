@@ -81,9 +81,9 @@ const InstancedPropsWithPhysics = ({ propType, instances }) => {
     ],
     palmtree: [
       { 
-        type: 'cylinder', 
-        position: [-0.6, 2, -0.1], 
-        args: [8, 0.8] // trunk 
+        type: 'cuboid', 
+        position: [-0.63, 2, -0.02], 
+        args: [0.85, 8, 0.9] // trunk 
       }
     ],
     tree: [
@@ -170,7 +170,7 @@ const BeachMap = () => {
     { pos: [-58, 0, 0], args: [1, 100, 115] },
     { pos: [0, 0, 58], args: [115, 100, 1] },
     { pos: [0, 0, -58], args: [115, 100, 1] },
-    { pos: [0, 50.5, 0], args: [115, 1, 115] }
+    { pos: [0, 50.5,0], args: [115, 1, 115] }
   ];
 
   return (
@@ -186,15 +186,15 @@ const BeachMap = () => {
       </RigidBody>
 
       {walls.map((wall, i) => (
-        <RigidBody key={i} type="fixed" colliders="cuboid" position={wall.pos}>
+        <RigidBody key={i} type="fixed" colliders={false} position={wall.pos}>
           <mesh>
             <boxGeometry args={wall.args} />
-            <meshStandardMaterial color="blue" transparent opacity={0.1} depthWrite={false}/>
+            <meshStandardMaterial color="purple" transparent opacity={0.1} depthWrite={false}/>
           </mesh>
         </RigidBody>
       ))}
 
-      <mesh position={[0, -1.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[1000, 1000]} />
         <meshStandardMaterial 
           color="#0074ad" 

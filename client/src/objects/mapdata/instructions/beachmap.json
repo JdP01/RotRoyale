@@ -1,6 +1,6 @@
 {
   "mapName": "Beach Map",
-  "mapFile": "/objects/Map2.glb",
+  "mapFile": "/objects/Map1.glb",
   "mapScale": [4.5, 4.5, 4.5],
   "mapPosition": [0, 40, 0],
   "instances": [
