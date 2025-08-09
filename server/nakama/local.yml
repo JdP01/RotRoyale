@@ -9,7 +9,7 @@ database:
 
 console:
   username: "juandi"
-  password: "Arco2004"
+  password:==>***REMOVED***
   http_bind_address: "0.0.0.0"
 
 session:
