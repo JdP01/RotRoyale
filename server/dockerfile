@@ -1,0 +1,18 @@
+# Build the Go plugin with the official plugin builder (ensures ABI/toolchain match)
+FROM heroiclabs/nakama-pluginbuilder:3.27.1 AS build
+WORKDIR /backend
+COPY . .
+RUN go mod tidy
+# Produce a single plugin .so containing your module
+RUN go build -trimpath -buildmode=plugin -o backend.so .
+
+# Final Nakama image with your plugin + config
+FROM heroiclabs/nakama:3.27.1
+# Copy Nakama config (your local.yml) into image
+COPY ./nakama/local.yml /nakama/data/local.yml
+# Copy the plugin into Nakama's modules dir
+COPY --from=build /backend/backend.so /nakama/data/modules/backend.so
+# Entrypoint: migrate DB, run Nakama, and load modules from /nakama/data/modules
+ENTRYPOINT ["/bin/sh","-ecx","/nakama/nakama migrate up --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable && \
+   exec /nakama/nakama --config /nakama/data/local.yml --runtime.path /nakama/data/modules \
+   --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable" ]
