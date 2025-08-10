@@ -8,11 +8,12 @@ RUN go build -trimpath -buildmode=plugin -o backend.so .
 
 # Final Nakama image with your plugin + config
 FROM heroiclabs/nakama:3.27.1
-# Copy Nakama config (your local.yml) into image
-COPY ./nakama/local.yml /nakama/data/local.yml
+# Copy Nakama config (your local.yml) into image as template
+COPY ./nakama/local.yml /nakama/data/local.yml.template
 # Copy the plugin into Nakama's modules dir
 COPY --from=build /backend/backend.so /nakama/data/modules/backend.so
-# Entrypoint: migrate DB, run Nakama, and load modules from /nakama/data/modules
-ENTRYPOINT ["/bin/sh","-ecx","/nakama/nakama migrate up --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable && \
+# Entrypoint: substitute env vars using sed, migrate DB, run Nakama, and load modules from /nakama/data/modules
+ENTRYPOINT ["/bin/sh","-ecx","sed 's/\\${CONSOLE_USERNAME}/'\"$CONSOLE_USERNAME\"'/g; s/\\${CONSOLE_PASSWORD}/'\"$CONSOLE_PASSWORD\"'/g' /nakama/data/local.yml.template > /nakama/data/local.yml && \
+   /nakama/nakama migrate up --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable && \
    exec /nakama/nakama --config /nakama/data/local.yml --runtime.path /nakama/data/modules \
    --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable" ]

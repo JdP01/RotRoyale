@@ -13,25 +13,35 @@ func getAssetsRpc(ctx context.Context, logger runtime.Logger, db *sql.DB, nk run
 		return "", runtime.NewError("user not authenticated", 3)
 	}
 
-	wallet, metadata, err := nk.WalletRead(ctx, userID)
+	account, err := nk.AccountGetId(ctx, userID)
 	if err != nil {
-		logger.Error("Failed to read wallet: %v", err)
-		return "", runtime.NewError("failed to read wallet", 13)
+		logger.Error("Failed to get account: %v", err)
+		return "", runtime.NewError("failed to get account", 13)
 	}
 
-	// Get coins from wallet, default to 0 if missing
+	// Parse wallet JSON to get coins
 	coins := int64(0)
-	if c, exists := wallet["coins"]; exists {
-		coins = c
+	if account.Wallet != "" {
+		var wallet map[string]int64
+		if err := json.Unmarshal([]byte(account.Wallet), &wallet); err == nil {
+			if c, exists := wallet["coins"]; exists {
+				coins = c
+			}
+		}
 	}
 
-	// Get skins from metadata, default to empty array if missing
+	// Get skins from account metadata
 	skins := []string{}
-	if s, exists := metadata["skins"]; exists {
-		if skinsList, ok := s.([]interface{}); ok {
-			for _, skin := range skinsList {
-				if skinStr, ok := skin.(string); ok {
-					skins = append(skins, skinStr)
+	if account.User.Metadata != "" {
+		var metadata map[string]interface{}
+		if err := json.Unmarshal([]byte(account.User.Metadata), &metadata); err == nil {
+			if s, exists := metadata["skins"]; exists {
+				if skinsList, ok := s.([]interface{}); ok {
+					for _, skin := range skinsList {
+						if skinStr, ok := skin.(string); ok {
+							skins = append(skins, skinStr)
+						}
+					}
 				}
 			}
 		}
@@ -91,15 +101,24 @@ func addSkinRpc(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return "", runtime.NewError("invalid payload", 3)
 	}
 
-	_, metadata, err := nk.WalletRead(ctx, userID)
+	account, err := nk.AccountGetId(ctx, userID)
 	if err != nil {
-		logger.Error("Failed to read wallet: %v", err)
-		return "", runtime.NewError("failed to read wallet", 13)
+		logger.Error("Failed to get account: %v", err)
+		return "", runtime.NewError("failed to get account", 13)
+	}
+
+	// Parse existing metadata
+	existingMetadata := make(map[string]interface{})
+	if account.User.Metadata != "" {
+		if err := json.Unmarshal([]byte(account.User.Metadata), &existingMetadata); err != nil {
+			logger.Error("Failed to parse existing metadata: %v", err)
+			return "", runtime.NewError("failed to parse metadata", 13)
+		}
 	}
 
 	// Get existing skins
 	skins := []string{}
-	if s, exists := metadata["skins"]; exists {
+	if s, exists := existingMetadata["skins"]; exists {
 		if skinsList, ok := s.([]interface{}); ok {
 			for _, skin := range skinsList {
 				if skinStr, ok := skin.(string); ok {
@@ -116,16 +135,14 @@ func addSkinRpc(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		}
 	}
 
-	// Add new skin
+	// Add new skin and merge with existing metadata
 	skins = append(skins, request.SkinToAdd)
-	newMetadata := map[string]interface{}{
-		"skins": skins,
-	}
+	existingMetadata["skins"] = skins
 
-	_, _, err = nk.WalletUpdate(ctx, userID, nil, newMetadata, true)
+	err = nk.AccountUpdateId(ctx, userID, "", existingMetadata, "", "", "", "", "")
 	if err != nil {
-		logger.Error("Failed to update wallet metadata: %v", err)
-		return "", runtime.NewError("failed to update wallet", 13)
+		logger.Error("Failed to update account metadata: %v", err)
+		return "", runtime.NewError("failed to update account", 13)
 	}
 
 	return "{\"success\": true}", nil

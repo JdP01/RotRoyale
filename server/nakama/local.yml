@@ -8,8 +8,8 @@ database:
   dsn: "postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable"
 
 console:
-  username: "${CONSOLE_USERNAME}"
-  password: "${CONSOLE_PASSWORD}"
+  username: ${CONSOLE_USERNAME}
+  password: ${CONSOLE_PASSWORD} #works with hardcoded values but not with .env variables 
   http_bind_address: "0.0.0.0"
 
 session:
@@ -24,7 +24,7 @@ socket:
 runtime:
   http_key: "defaultkey"
   http_bind_address: "0.0.0.0"
-  port: 7351
+  port: 7352
 
 # Add HTTP server configuration with CORS
 http_server:
