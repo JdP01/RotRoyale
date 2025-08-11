@@ -5,6 +5,7 @@ import { useGLTF } from '@react-three/drei';
 import { useMatchmaking } from '../logic/MatchmakingLogic';
 import MatchmakingUI from './MatchmakingUI';
 import '../styling/GameUI.css';
+import StoreNavigation from './stores';
 
 // Dino Character component using GLB model
 function DinoCharacter({ position, rotation, scale = 1, modelPath }) {
@@ -147,6 +148,7 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showGameModeSelect, setShowGameModeSelect] = useState(false);
   const [showMatchmakingButton, setShowMatchmakingButton] = useState(false);
+  const [storePage, setStorePage] = useState(null); // null | 'coins' | 'store'
 
   // Use the matchmaking hook
   const {
@@ -212,6 +214,17 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
     return '#23b828ff'; // Green for find match
   };
 
+  // Show store/coins page if selected
+  if (storePage) {
+    // Pass a callback to return to main menu UI
+    return (
+      <StoreNavigation
+        onBackToMenu={() => setStorePage(null)}
+        initialPage={storePage}
+      />
+    );
+  }
+
   return (
     <div className="new-game-menu">
       {/* Top navigation */}
@@ -229,14 +242,20 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
             </div>
           )}
         </div>
-        
+
         <div className="username-display">
           {userSession?.username || 'Player'}
         </div>
-        
-        <button className="store-button">
-          🛒
-        </button>
+
+        <div className="top-nav-buttons">
+          <button className="coins-button" onClick={() => setStorePage('coins')}>
+            <span className="coin-icon">🪙</span>
+            <span className="coin-amount">0</span>
+          </button>
+          <button className="store-button" onClick={() => setStorePage('store')}>
+            🛒
+          </button>
+        </div>
       </div>
 
       {/* Character carousel section */}

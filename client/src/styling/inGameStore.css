@@ -1,0 +1,161 @@
+
+/* Store Navigation Main */
+.store-nav-main {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	background: linear-gradient(135deg, #232526 0%, #414345 100%);
+	gap: 24px;
+}
+
+.store-nav-btn {
+	padding: 16px 32px;
+	font-size: 18px;
+	border-radius: 8px;
+	border: none;
+	background: #2196f3;
+	color: #fff;
+	font-weight: bold;
+	cursor: pointer;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+	transition: background 0.2s;
+}
+.store-nav-btn:hover {
+	background: #1769aa;
+}
+.store-nav-back-btn {
+	margin-top: 32px;
+	background: #666;
+	color: #fff;
+	border: none;
+	border-radius: 6px;
+	padding: 10px 24px;
+	font-size: 16px;
+	cursor: pointer;
+}
+
+/* Back Arrow Button */
+.back-arrow {
+	position: absolute;
+	top: 24px;
+	left: 24px;
+	background: rgba(0,0,0,0.2);
+	color: #fff;
+	border: none;
+	border-radius: 50%;
+	width: 44px;
+	height: 44px;
+	font-size: 24px;
+	cursor: pointer;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.2s;
+}
+.back-arrow:hover {
+	background: rgba(0,0,0,0.35);
+}
+
+/* Purchase Coins Page */
+.purchase-coins-page {
+	position: relative;
+	min-height: 100vh;
+	background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+.purchase-title {
+	margin-top: 60px;
+	font-size: 2.2rem;
+	color: #fffbe7;
+	text-shadow: 0 2px 8px #0006;
+	margin-bottom: 32px;
+}
+.coin-options {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+	max-width: 400px;
+}
+.coin-option {
+	background: rgba(255,255,255,0.15);
+	border-radius: 12px;
+	padding: 24px 32px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+	font-size: 1.2rem;
+}
+.coin-amount {
+	color: #fffbe7;
+	font-weight: bold;
+	font-size: 1.3rem;
+}
+.coin-price {
+	color: #232526;
+	font-size: 1.1rem;
+	margin-right: 16px;
+}
+.buy-btn {
+	background: #ffd700;
+	color: #232526;
+	border: none;
+	border-radius: 8px;
+	padding: 10px 24px;
+	font-size: 1rem;
+	font-weight: bold;
+	cursor: not-allowed;
+	opacity: 0.7;
+}
+
+/* In-Game Store Page */
+.in-game-store-page {
+	position: relative;
+	min-height: 100vh;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+.store-title {
+	margin-top: 60px;
+	font-size: 2.2rem;
+	color: #fffbe7;
+	text-shadow: 0 2px 8px #0006;
+	margin-bottom: 32px;
+}
+.store-items-list {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+	max-width: 400px;
+}
+.store-item {
+	background: rgba(255,255,255,0.12);
+	border-radius: 12px;
+	padding: 24px 32px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+	font-size: 1.2rem;
+}
+.item-name {
+	color: #fffbe7;
+	font-weight: bold;
+	font-size: 1.2rem;
+}
+.item-price {
+	color: #ffd700;
+	font-size: 1.1rem;
+	margin-right: 16px;
+}
