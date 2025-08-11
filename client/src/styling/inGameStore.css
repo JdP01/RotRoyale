@@ -59,11 +59,53 @@
 	background: rgba(0,0,0,0.35);
 }
 
+/* Current Balance Display */
+.current-balance {
+	background: rgba(255,255,255,0.1);
+	border-radius: 12px;
+	padding: 16px 24px;
+	margin-bottom: 24px;
+	text-align: center;
+}
+.current-balance p {
+	margin: 0;
+	color: #fffbe7;
+	font-size: 1.2rem;
+	font-weight: 500;
+}
+.balance-amount {
+	font-weight: bold;
+	color: #ffd700;
+	font-size: 1.4rem;
+}
+
+/* Error Message */
+.error-message {
+	background: rgba(244, 67, 54, 0.2);
+	color: #ff6b6b;
+	padding: 12px 24px;
+	border-radius: 8px;
+	margin-bottom: 16px;
+	text-align: center;
+	border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+/* Loading Indicator */
+.loading-indicator {
+	text-align: center;
+	color: #fffbe7;
+	font-size: 1.1rem;
+	margin-top: 24px;
+	padding: 16px;
+	background: rgba(255,255,255,0.1);
+	border-radius: 8px;
+}
+
 /* Purchase Coins Page */
 .purchase-coins-page {
 	position: relative;
 	min-height: 100vh;
-	background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+	background: linear-gradient(135deg, #cf9d13 0%, #ff9900 100%);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -111,6 +153,17 @@
 	padding: 10px 24px;
 	font-size: 1rem;
 	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.2s;
+	min-width: 80px;
+}
+.buy-btn:hover:not(:disabled) {
+	background: #ffed4a;
+	transform: translateY(-1px);
+}
+.buy-btn:disabled {
+	background: #ccc;
+	color: #666;
 	cursor: not-allowed;
 	opacity: 0.7;
 }
@@ -119,7 +172,7 @@
 .in-game-store-page {
 	position: relative;
 	min-height: 100vh;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #667eea 0%, #55a24b 100%);
 	display: flex;
 	flex-direction: column;
 	align-items: center;

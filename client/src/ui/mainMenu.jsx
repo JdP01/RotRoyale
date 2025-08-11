@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useSpring, animated } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
@@ -149,6 +149,44 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
   const [showGameModeSelect, setShowGameModeSelect] = useState(false);
   const [showMatchmakingButton, setShowMatchmakingButton] = useState(false);
   const [storePage, setStorePage] = useState(null); // null | 'coins' | 'store'
+  const [currentCoins, setCurrentCoins] = useState(0);
+
+  // Utility function to get user assets
+  const getAssets = async () => {
+    try {
+      if (!userSession?.client || !userSession?.session) {
+        return { coins: 0, skins: [] };
+      }
+      
+      const response = await userSession.client.rpc(userSession.session, "get_assets", "");
+      console.log('Main menu RPC response:', response);
+      
+      // Check if payload is already an object or needs parsing
+      if (typeof response.payload === 'string') {
+        return JSON.parse(response.payload);
+      } else {
+        return response.payload;
+      }
+    } catch (error) {
+      console.error('Failed to get assets:', error);
+      return { coins: 0, skins: [] };
+    }
+  };
+
+  // Load initial coin balance
+  useEffect(() => {
+    loadUserAssets();
+  }, [userSession]);
+
+  const loadUserAssets = async () => {
+    const assets = await getAssets();
+    setCurrentCoins(assets.coins || 0);
+  };
+
+  // Handle coin balance updates from store
+  const handleCoinsUpdate = (newCoinBalance) => {
+    setCurrentCoins(newCoinBalance);
+  };
 
   // Use the matchmaking hook
   const {
@@ -219,8 +257,14 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
     // Pass a callback to return to main menu UI
     return (
       <StoreNavigation
-        onBackToMenu={() => setStorePage(null)}
+        onBackToMenu={() => {
+          setStorePage(null);
+          // Refresh coin balance when returning from store
+          loadUserAssets();
+        }}
         initialPage={storePage}
+        userSession={userSession}
+        onCoinsUpdate={handleCoinsUpdate}
       />
     );
   }
@@ -250,7 +294,7 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
         <div className="top-nav-buttons">
           <button className="coins-button" onClick={() => setStorePage('coins')}>
             <span className="coin-icon">🪙</span>
-            <span className="coin-amount">0</span>
+            <span className="coin-amount">{currentCoins.toLocaleString()}</span>
           </button>
           <button className="store-button" onClick={() => setStorePage('store')}>
             🛒
