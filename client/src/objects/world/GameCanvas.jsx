@@ -2,7 +2,8 @@ import React, { Suspense, useMemo, useState, useRef, useEffect, useCallback } fr
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Box, KeyboardControls, OrbitControls, Sky } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
-import { Dino } from '../localplayer/dino';
+import { Dino } from '../localplayer/dino/dino';
+import { Bear } from '../localplayer/bear/bear'
 import * as THREE from "three";
 import { CameraRig } from '../localplayer/CameraRig';
 import GameEnvironment from './GameEnvironment';
@@ -22,9 +23,12 @@ export const Controls = {
 }
 
 export const OtherPlayer = ({ playerData, userSession }) => {
+    const CharacterComponent = playerData.character?.component === 'bear' ? Bear : Dino;
+    const characterRef = useRef(null);
+    
     return (
-        <Dino
-            ref={useRef()}
+        <CharacterComponent
+            ref={characterRef}
             userSession={userSession}
             isNetworkedPlayer={true}
             networkPosition={playerData.position}
@@ -45,7 +49,8 @@ const GameLogic = ({
   onCameraPitchChange,
   isAiming,
   onAimingChange,
-  otherPlayersData
+  otherPlayersData,
+  selectedCharacter
 }) => {
   const lastSentTime = useRef(0);
   const [localPlayerButtonStates, setLocalPlayerButtonStates] = useState({
@@ -289,7 +294,8 @@ const GameLogic = ({
         z: position.z
       },
       rotation: dinoRotation,
-      buttonStates: localPlayerButtonStates // Send button states instead of calculated animation state
+      buttonStates: localPlayerButtonStates, // Send button states instead of calculated animation state
+      character: selectedCharacter // Include character information
     };
 
     try {
@@ -323,16 +329,29 @@ const GameLogic = ({
   return (
     <>
       {/* Main player */}
-      <Dino
-        ref={dinoRef}
-        onRotationChange={onRotationChange}
-        onCameraPitchChange={onCameraPitchChange}
-        onAimingChange={onAimingChange}
-        onButtonStatesChange={setLocalPlayerButtonStates} // Pass button states callback instead
-        castShadow
-        userSession={userSession}
-        currentMatch={currentMatch}
-      />
+      {selectedCharacter?.component === 'bear' ? (
+        <Bear
+          ref={dinoRef}
+          onRotationChange={onRotationChange}
+          onCameraPitchChange={onCameraPitchChange}
+          onAimingChange={onAimingChange}
+          onButtonStatesChange={setLocalPlayerButtonStates}
+          castShadow
+          userSession={userSession}
+          currentMatch={currentMatch}
+        />
+      ) : (
+        <Dino
+          ref={dinoRef}
+          onRotationChange={onRotationChange}
+          onCameraPitchChange={onCameraPitchChange}
+          onAimingChange={onAimingChange}
+          onButtonStatesChange={setLocalPlayerButtonStates}
+          castShadow
+          userSession={userSession}
+          currentMatch={currentMatch}
+        />
+      )}
 
       {/* Other players - simplified rendering */}
       {Object.entries(otherPlayersData).map(([playerId, playerData]) => {
@@ -385,7 +404,8 @@ export default function GameCanvas({
   otherPlayersData, 
   setConnectedPlayers, 
   setOtherPlayersData, 
-  backToMenu 
+  backToMenu,
+  selectedCharacter
 }) {
   const [dinoRotation, setDinoRotation] = useState(0);
   const [cameraPitch, setCameraPitch] = useState(0);
@@ -454,7 +474,8 @@ export default function GameCanvas({
           if (gameUpdate.type === 'player_update') {
             console.log(`Updating player ${gameUpdate.playerId} (${gameUpdate.username}):`, {
               position: gameUpdate.position,
-              rotation: gameUpdate.rotation
+              rotation: gameUpdate.rotation,
+              character: gameUpdate.character
             });
 
             setOtherPlayersData(prev => {
@@ -464,6 +485,7 @@ export default function GameCanvas({
                   position: gameUpdate.position,
                   rotation: gameUpdate.rotation,
                   buttonStates: gameUpdate.buttonStates || { forward: false, back: false, left: false, right: false, jump: false, sprint: false }, // Store button states instead
+                  character: gameUpdate.character, // Store character data for rendering
                   username: gameUpdate.username,
                   lastUpdate: Date.now()
                 }
@@ -542,10 +564,10 @@ export default function GameCanvas({
     };
 
     return () => {
-      socket.onmatchdata = null;
-      socket.onmatchpresence = null;
+      // Don't set handlers to null to avoid breaking other components
+      // Just let the effect cleanup naturally when userSession changes
     };
-  }, [userSession]);
+  }, [userSession, setOtherPlayersData, setConnectedPlayers]);
 
   const map = useMemo(() => [ //map for KeyboardControls
     { name: Controls.forward, keys: ["KeyW"] },
@@ -648,6 +670,7 @@ export default function GameCanvas({
                 isAiming={isAiming}
                 onAimingChange={handleAimingChange}
                 otherPlayersData={otherPlayersData}
+                selectedCharacter={selectedCharacter}
               />
 
             </Physics>

@@ -6,7 +6,7 @@ import { useMatchmaking } from '../logic/MatchmakingLogic';
  * UI Component for the matchmaking screen
  * This shows the user interface for finding and joining multiplayer matches
  */
-const MatchmakingUI = ({ userSession, onMatchFound, onMatchmakingError }) => {
+const MatchmakingUI = ({ userSession, onMatchFound, onMatchmakingError, selectedCharacter }) => {
   // Get all the matchmaking logic and state from our custom hook
   const {
     isSearching,
@@ -40,8 +40,13 @@ const MatchmakingUI = ({ userSession, onMatchFound, onMatchmakingError }) => {
         // Not searching - show the "Find Match" button
         <div>
           <p style={{ marginBottom: '20px' }}>Ready to find other players?</p>
+          {selectedCharacter && (
+            <p style={{ marginBottom: '15px', color: '#4CAF50' }}>
+              Playing as: <strong>{selectedCharacter.name}</strong>
+            </p>
+          )}
           <button 
-            onClick={startMatchmaking}
+            onClick={() => startMatchmaking(selectedCharacter)}
             style={{
               background: '#4CAF50',
               color: 'white',

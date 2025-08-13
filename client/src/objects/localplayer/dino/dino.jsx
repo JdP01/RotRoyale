@@ -4,8 +4,8 @@ import {RigidBody, CapsuleCollider, CuboidCollider} from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from "three";
 import { useDinoAnimations } from "./dinoAnimations";
-import { useDinoControls } from "./dinoControls";
-import { usePlayerState } from "../../logic/PlayerState";
+import { useDinoControls } from "../controls";
+import { usePlayerState } from "../../../logic/PlayerState";
 
 export const Dino = ({ 
     ref: bodyRef, 
@@ -28,11 +28,11 @@ export const Dino = ({
     const mainGroupRef = useRef();
     
     // Load all models
-    const { scene: Body } = useGLTF('/dino_parts1/dino_body.glb');
-    const { scene: Head } = useGLTF('/dino_parts1/dino_head.glb');
-    const { scene: LeftLeg } = useGLTF('/dino_parts1/left_leg.glb'); 
-    const { scene: armLeft } = useGLTF('/dino_parts1/left_arm.glb');
-    const { scene: tail } = useGLTF('/dino_parts1/dino_tail.glb');
+    const { scene: Body } = useGLTF('/dino/dino_body.glb');
+    const { scene: Head } = useGLTF('/dino/dino_head.glb');
+    const { scene: LeftLeg } = useGLTF('/dino/left_leg.glb'); 
+    const { scene: armLeft } = useGLTF('/dino/left_arm.glb');
+    const { scene: tail } = useGLTF('/dino/dino_tail.glb');
     const { scene: weapon } = useGLTF('/objects/game_glock.glb');
     
     // Clone models for each instance with pre-cloned mirrored parts

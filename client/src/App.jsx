@@ -11,6 +11,7 @@ export default function App() {
   const [currentMatch, setCurrentMatch] = useState(null);
   const [connectedPlayers, setConnectedPlayers] = useState([]);
   const [otherPlayersData, setOtherPlayersData] = useState({});
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
   
   const handleLogin = (sessionData) => {
     console.log("Login successful, session data:", sessionData);
@@ -90,11 +91,13 @@ export default function App() {
     alert(`Matchmaking failed: ${error}`);
   };
 
-  const startSinglePlayer = () => {
+  const startSinglePlayer = (characterData) => {
+    setSelectedCharacter(characterData);
     setGameState('playing');
   };
 
-  const startMultiplayer = () => {
+  const startMultiplayer = (characterData) => {
+    setSelectedCharacter(characterData);
     setGameState('matchmaking');
   };
 
@@ -163,6 +166,7 @@ export default function App() {
           backToMenu={backToMenu}
           handleMatchFound={handleMatchFound}
           handleMatchmakingError={handleMatchmakingError}
+          selectedCharacter={selectedCharacter}
         />
       </>
     );
@@ -201,6 +205,7 @@ export default function App() {
         setConnectedPlayers={setConnectedPlayers}
         setOtherPlayersData={setOtherPlayersData}
         backToMenu={backToMenu}
+        selectedCharacter={selectedCharacter}
       />
     </div>
   );

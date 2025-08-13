@@ -276,7 +276,7 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
         
         const rotationSpeed = 10; // Adjust this to control turning speed
         const newRotation = characterRotation + angleDiff * Math.min(1, delta * rotationSpeed);
-        setCharacterRotation(newRotation);
+        setCharacterRotation(newRotation); //comment out for free camera move 
         
         
         // Jump logic - always works when jump is pressed

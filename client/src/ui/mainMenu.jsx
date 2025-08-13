@@ -27,11 +27,11 @@ function DinoCharacter({ position, rotation, scale = 1, modelPath }) {
 
 // Character Carousel Component
 function CharacterCarousel({ currentCharacterIndex, setCurrentCharacterIndex }) {
-  // For now, just one character model - can be expanded later
+  // Character selection array
   const characters = [
-    { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb' },
-    { name: 'ColdVoxy', model: 'dino_frosty', path: '/displayObjects/dino_frosty.glb' },
-    { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_ket.glb' }
+    { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb', component: 'dino' },
+    { name: 'Teddy', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
+    { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_display.glb', component: 'dino' }
   ];
 
   const { position: centerPosition } = useSpring({
@@ -151,6 +151,13 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
   const [storePage, setStorePage] = useState(null); // null | 'coins' | 'store'
   const [currentCoins, setCurrentCoins] = useState(0);
 
+  // Character selection array (same as in CharacterCarousel)
+  const characters = [
+    { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb', component: 'dino' },
+    { name: 'Teddy', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
+    { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_display.glb', component: 'dino' }
+  ];
+
   // Utility function to get user assets
   const getAssets = async () => {
     try {
@@ -218,7 +225,8 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
   };
 
   const handleSinglePlayerClick = () => {
-    startSinglePlayer();
+    const selectedCharacter = characters[currentCharacterIndex];
+    startSinglePlayer(selectedCharacter);
   };
 
   const handleMultiplayerClick = () => {
@@ -232,7 +240,8 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
       cancelMatchmaking();
     } else {
       console.log("Attempting to start matchmaking...");
-      startMatchmaking();
+      const selectedCharacter = characters[currentCharacterIndex];
+      startMatchmaking(selectedCharacter);
     }
   };
 
@@ -391,7 +400,7 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
 }
 
 // Matchmaking wrapper component
-export function MatchmakingUIWrapper({ userSession, backToMenu, handleMatchFound, handleMatchmakingError }) {
+export function MatchmakingUIWrapper({ userSession, backToMenu, handleMatchFound, handleMatchmakingError, selectedCharacter }) {
   return (
     <div className="matchmaking-container">
       <button onClick={backToMenu} className="back-button">
@@ -401,6 +410,7 @@ export function MatchmakingUIWrapper({ userSession, backToMenu, handleMatchFound
         userSession={userSession}
         onMatchFound={handleMatchFound}
         onMatchmakingError={handleMatchmakingError}
+        selectedCharacter={selectedCharacter}
       />
     </div>
   );
