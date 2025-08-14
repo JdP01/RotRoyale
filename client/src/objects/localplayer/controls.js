@@ -13,6 +13,14 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
     // Get player state for stamina management
     const { stamina, isExhausted, consumeStamina, regenerateStamina, fireRaycast } = usePlayerState();
 
+    // Stamina regeneration state
+    const lastRegenTime = useRef(0);
+    const canSprintAfterExhaustion = useRef(true);
+    const sprintKeyPressed = useRef(false);
+    const sprintKeyValidated = useRef(false);
+    const staminaDepletionTime = useRef(0);
+    const regenerationDelayActive = useRef(false);
+
     // Movement controls 
     const jump = () => {
         if (!bodyRef.current) return;
@@ -73,6 +81,23 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
     
     // Update button states when keys change
     useEffect(() => {
+        // Track sprint key state changes for validation
+        const wasPressed = sprintKeyPressed.current;
+        sprintKeyPressed.current = sprintPressed;
+        
+        // Sprint key validation logic
+        if (!wasPressed && sprintPressed) {
+            // Key just pressed - validate if sprinting is allowed
+            if (stamina >= 20 && !regenerationDelayActive.current) {
+                sprintKeyValidated.current = true;
+            } else {
+                sprintKeyValidated.current = false; // Key press ignored
+            }
+        } else if (wasPressed && !sprintPressed) {
+            // Key just released - reset validation
+            sprintKeyValidated.current = false;
+        }
+        
         setButtonStates({
             forward: forwardPressed,
             back: backPressed,
@@ -81,8 +106,8 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
             jump: jumpPressed,
             sprint: sprintPressed
         });
-    }, [forwardPressed, backPressed, leftPressed, rightPressed, jumpPressed, sprintPressed]);
-    const [jumpTriggered, setJumpTriggered] = useState(false); // For right-click aiming 
+    }, [forwardPressed, backPressed, leftPressed, rightPressed, jumpPressed, sprintPressed, stamina]);
+    const [isCurrentlySprinting, setIsCurrentlySprinting] = useState(false); 
 
     const dir = new THREE.Vector3();
     const [cameraRotation, setCameraRotation] = useState(0); // Camera/mouse rotation (yaw)
@@ -125,32 +150,31 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
         };
 
         // once, reuse this
-const raycaster = new THREE.Raycaster();
-const ndcCenter = new THREE.Vector2(0, 0); // screen center
+        const raycaster = new THREE.Raycaster();
+        const ndcCenter = new THREE.Vector2(0, 0); // screen center
 
-const onMouseDown = (event) => {
-  if (event.button === 0) {
-    if (document.pointerLockElement !== canvas) {
-      canvas.requestPointerLock();
-    } else {
-      // ensure controls/camera are up-to-date this frame
-      //controls?.update?.();
+        const onMouseDown = (event) => {
+        if (event.button === 0) {
+            if (document.pointerLockElement !== canvas) {
+            canvas.requestPointerLock();
+            } else {
+            // ensure controls/camera are up-to-date this frame
 
-      // Build ray from the camera's *view center*
-      raycaster.setFromCamera(ndcCenter, camera);
-      const origin = raycaster.ray.origin.clone();
-      const dir = raycaster.ray.direction.clone(); // already normalized
+            // Build ray from the camera's *view center*
+            raycaster.setFromCamera(ndcCenter, camera);
+            const origin = raycaster.ray.origin.clone();
+            const dir = raycaster.ray.direction.clone(); // already normalized
 
-      // 100 units forward
-      const rayEnd = origin.clone().add(dir.multiplyScalar(100));
+            // 100 units forward
+            const rayEnd = origin.clone().add(dir.multiplyScalar(100));
 
-      fireRaycast(origin, rayEnd);
-    }
-  }
-  if (event.button === 2 && document.pointerLockElement === canvas) {
-    setIsAiming(true);
-  }
-};
+            fireRaycast(origin, rayEnd);
+            }
+        }
+        if (event.button === 2 && document.pointerLockElement === canvas) {
+            setIsAiming(true);
+        }
+        };
 
 
         const onMouseUp = (event) => {
@@ -190,8 +214,48 @@ const onMouseDown = (event) => {
         let moving = false;
         let sprinting = false;
         
-        // Check if can sprint (need stamina and not exhausted)
-        const canSprint = sprintPressed && stamina && !isExhausted;
+        // Advanced sprint validation system
+        const currentTime = Date.now();
+        
+        // Check if stamina just hit 0
+        if (stamina <= 0 && !regenerationDelayActive.current) {
+            staminaDepletionTime.current = currentTime;
+            regenerationDelayActive.current = true;
+            sprintKeyValidated.current = false; // Force sprint key re-press
+        }
+        
+        // Check if 3-second delay has passed since stamina depletion
+        if (regenerationDelayActive.current && 
+            currentTime - staminaDepletionTime.current >= 3000) {
+            regenerationDelayActive.current = false;
+        }
+        
+        // Check if we can start sprinting (fresh key press with sufficient stamina)
+        const canStartSprint = sprintKeyValidated.current && 
+                              stamina >= 20 && 
+                              !isExhausted && 
+                              !regenerationDelayActive.current &&
+                              !isCurrentlySprinting;
+
+        // Start sprinting if conditions are met
+        if (canStartSprint) {
+            setIsCurrentlySprinting(true);
+        }
+
+        // Stop sprinting if key is released or stamina is depleted
+        if (isCurrentlySprinting && (!sprintPressed || stamina <= 0)) {
+            setIsCurrentlySprinting(false);
+            if (stamina <= 0) {
+                sprintKeyValidated.current = false; // Force key re-press
+            }
+        }
+
+        // Sprint logic
+        if (isCurrentlySprinting && stamina > 0) {
+            sprinting = true;
+            // Consume stamina while sprinting at normal pace
+            consumeStamina(50 * delta); // 50 stamina per second
+        }
         
         // Calculate forward and right vectors based on camera rotation (for movement)
         const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraRotation);
@@ -225,16 +289,13 @@ const onMouseDown = (event) => {
             // Face right direction
             targetCharacterRotation = cameraRotation - Math.PI / 2;
         }
-        
-        if (canSprint) {
-            sprinting = true;
-            // Consume stamina while sprinting
-            consumeStamina(50 * delta); // 50 stamina per second
-        }
 
-        // Regenerate stamina when not sprinting
-        if (!sprinting && stamina < 100) {
-            regenerateStamina(20 * delta); // 20 stamina per second
+        // Chunked stamina regeneration - only if no delay and not sprinting
+        if (!sprinting && !regenerationDelayActive.current && stamina < 100) {
+            if (currentTime - lastRegenTime.current >= 1500) { // 1.5 second interval
+                regenerateStamina(10); // Regenerate 10 stamina at once
+                lastRegenTime.current = currentTime;
+            }
         }
         
         // Handle diagonal movement - face the actual movement direction
