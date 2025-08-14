@@ -198,7 +198,7 @@ export const Bear = ({
     // Game Frame Loop 
     useFrame((_, delta) => { 
         if (!bodyRef.current) return;
-        console.log("Location:", bodyRef.current.translation());
+        //console.log("Location:", bodyRef.current.translation());
         if (!isNetworkedPlayer && controls) {
             // Handle local player controls
             controls.handleMovement(delta, setIsMoving, setIsSprinting);
@@ -297,7 +297,6 @@ export const Bear = ({
             
                 {/* Colliders */}
                 <CapsuleCollider args={[0.6, 1.3]} position={[0, 7, 2.2]} rotation={[0, 0, 0]} restitution={0} /> {/*main collider*/}
-                <CapsuleCollider args={[0.2, 1.3]} position={[0, 7, 3.6]} rotation={[0, 0, 0]} restitution={0} /> {/*collider for climbing*/}
 
                 
                 {/* Head */}

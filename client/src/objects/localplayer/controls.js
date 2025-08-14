@@ -29,7 +29,7 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
 
         const pos = body.translation();
         const rayOrigin = { x: pos.x, y: pos.y, z: pos.z };
-        const rayDir = { x: 0, y: -1, z: 0 };
+        const rayDir = { x: 0, y: -10, z: 0 };
         const ray = new rapier.Ray(rayOrigin, rayDir);
 
         // Exclude the character's own collider
@@ -41,10 +41,10 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
             const parentRigidBody = collider?.parent();
             const objectInfo = parentRigidBody?.userData?.name || "Unnamed object";
             
-            console.log("HIT DETECTED!");
-            console.log("- Object:", objectInfo);
-            console.log("- Distance (toi):", hit.toi);
-            console.log("- Hit collider handle:", collider.handle);
+            //console.log("HIT DETECTED!");
+            //console.log("- Object:", objectInfo);
+            //console.log("- Distance (toi):", hit.toi);
+            //console.log("- Hit collider handle:", collider.handle);
             return true;
             
         }
@@ -124,37 +124,34 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
             }
         };
 
-        const onMouseDown = (event) => { //handle leftclick
-            if (event.button === 0) { // Left mouse button
-                if (document.pointerLockElement !== canvas) { //if mouse is not pointerlocked yet lock it 
-                    canvas.requestPointerLock();
-                } 
-                else {      //if mouse is locked then shoot
-                    console.log("🔫 SHOOTING!");
-                    
-                    // Raycast from camera center
-                    if (bodyRef.current && camera) {
-                        // Get camera position as the start point
-                        const cameraPosition = camera.position.clone();
-                        
-                        // Get camera's forward direction
-                        const cameraDirection = new THREE.Vector3();
-                        camera.getWorldDirection(cameraDirection);
-                        
-                        // Calculate end point of the ray (100 units forward from camera)
-                        const rayEnd = cameraPosition.clone().add(cameraDirection.clone().multiplyScalar(100));
-                        
-                        // Trigger raycast visualization from camera center
-                        fireRaycast(cameraPosition, rayEnd);
-                    }
-                }
-            } 
-            if (event.button === 2) { // Right mouse button
-                if (document.pointerLockElement === canvas) {
-                    setIsAiming(true);
-                }
-            }
-        };
+        // once, reuse this
+const raycaster = new THREE.Raycaster();
+const ndcCenter = new THREE.Vector2(0, 0); // screen center
+
+const onMouseDown = (event) => {
+  if (event.button === 0) {
+    if (document.pointerLockElement !== canvas) {
+      canvas.requestPointerLock();
+    } else {
+      // ensure controls/camera are up-to-date this frame
+      //controls?.update?.();
+
+      // Build ray from the camera's *view center*
+      raycaster.setFromCamera(ndcCenter, camera);
+      const origin = raycaster.ray.origin.clone();
+      const dir = raycaster.ray.direction.clone(); // already normalized
+
+      // 100 units forward
+      const rayEnd = origin.clone().add(dir.multiplyScalar(100));
+
+      fireRaycast(origin, rayEnd);
+    }
+  }
+  if (event.button === 2 && document.pointerLockElement === canvas) {
+    setIsAiming(true);
+  }
+};
+
 
         const onMouseUp = (event) => {
             if (event.button === 2) { // Right mouse button release

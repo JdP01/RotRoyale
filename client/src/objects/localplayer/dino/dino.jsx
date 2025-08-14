@@ -202,7 +202,7 @@ export const Dino = ({
     // Game Frame Loop 
     useFrame((_, delta) => { 
         if (!bodyRef.current) return;
-        console.log("Location:", bodyRef.current.translation());
+        //console.log("Location:", bodyRef.current.translation());
         if (!isNetworkedPlayer && controls) {
             // Handle local player controls
             controls.handleMovement(delta, setIsMoving, setIsSprinting);
