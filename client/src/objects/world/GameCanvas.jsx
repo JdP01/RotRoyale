@@ -24,11 +24,10 @@ export const Controls = {
 
 export const OtherPlayer = ({ playerData, userSession }) => {
     const CharacterComponent = playerData.character?.component === 'bear' ? Bear : Dino;
-    const characterRef = useRef(null);
     
     return (
         <CharacterComponent
-            ref={characterRef}
+            ref={useRef()}
             userSession={userSession}
             isNetworkedPlayer={true}
             networkPosition={playerData.position}
@@ -474,8 +473,7 @@ export default function GameCanvas({
           if (gameUpdate.type === 'player_update') {
             console.log(`Updating player ${gameUpdate.playerId} (${gameUpdate.username}):`, {
               position: gameUpdate.position,
-              rotation: gameUpdate.rotation,
-              character: gameUpdate.character
+              rotation: gameUpdate.rotation
             });
 
             setOtherPlayersData(prev => {
@@ -485,7 +483,6 @@ export default function GameCanvas({
                   position: gameUpdate.position,
                   rotation: gameUpdate.rotation,
                   buttonStates: gameUpdate.buttonStates || { forward: false, back: false, left: false, right: false, jump: false, sprint: false }, // Store button states instead
-                  character: gameUpdate.character, // Store character data for rendering
                   username: gameUpdate.username,
                   lastUpdate: Date.now()
                 }
@@ -564,10 +561,10 @@ export default function GameCanvas({
     };
 
     return () => {
-      // Don't set handlers to null to avoid breaking other components
-      // Just let the effect cleanup naturally when userSession changes
+      socket.onmatchdata = null;
+      socket.onmatchpresence = null;
     };
-  }, [userSession, setOtherPlayersData, setConnectedPlayers]);
+  }, [userSession]);
 
   const map = useMemo(() => [ //map for KeyboardControls
     { name: Controls.forward, keys: ["KeyW"] },
@@ -654,7 +651,7 @@ export default function GameCanvas({
           shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }
         }}>
           <Suspense fallback={null}>
-            <Physics gravity={[0, -9.81, 0]} timeStep={1 /300}>
+            <Physics gravity={[0, -9.81, 0]} timeStep={1 /300} >
               <OrbitControls />
 
               <GameEnvironment />

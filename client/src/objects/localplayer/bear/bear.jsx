@@ -33,18 +33,6 @@ export const Bear = ({
     const { scene: armLeft } = useGLTF('/bear/arm_right.glb');
     const { scene: weapon } = useGLTF('/objects/game_glock.glb');
     
-    // Debug logging for model loading
-    useEffect(() => {
-        console.log('Bear models loaded:', {
-            Body: !!Body,
-            Head: !!Head,
-            LeftLeg: !!LeftLeg,
-            armLeft: !!armLeft,
-            weapon: !!weapon,
-            isNetworked: isNetworkedPlayer
-        });
-    }, [Body, Head, LeftLeg, armLeft, weapon, isNetworkedPlayer]);
-    
     // Clone models for each instance with pre-cloned mirrored parts
     const models = useMemo(() => {
         const bodyModel = Body.clone(true);
@@ -107,7 +95,7 @@ export const Bear = ({
     const { updateAdvancedAnimations } = useBearAnimations();
     
     // Get controller logic - for local players use actual controls, for networked use simulated controls
-    const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping) : null;
+    const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping, 6.85) : null;
     
     // For networked players, simulate movement states based on button states
     useEffect(() => {
@@ -303,49 +291,49 @@ export const Bear = ({
             gravityScale={5}
             friction={0}
         >
-            <group ref={mainGroupRef} scale={[0.4, 0.4, 0.4]} rotation={[0, 0, 0]}>
+            <group ref={mainGroupRef} scale={[0.5, 0.5, 0.5]} rotation={[0, 0, 0]}>
                 {/* Main body */}
-                <primitive object={models.Body} position={[0, 0, 0]} />
+                <primitive object={models.Body} position={[0.1, 0.7, 1]} scale={[1,1,1]} />
             
                 {/* Colliders */}
-                <CapsuleCollider args={[1, 1.5]} position={[0, 4.55, 2.2]} rotation={[0.8, 0, 0]} restitution={0} />
-                <CapsuleCollider args={[0.8, 0.3]} position={[0, 5, -5.3]} rotation={[-1, 0, 0]} restitution={0} />
-                <CuboidCollider args={[0.77, 0.6, 1.3]} position={[0, 8.6, 4.2]} rotation={[0, 0, 0]} restitution={0} />
+                <CapsuleCollider args={[0.6, 1.3]} position={[0, 7, 2.2]} rotation={[0, 0, 0]} restitution={0} /> {/*main collider*/}
+                <CapsuleCollider args={[0.2, 1.3]} position={[0, 7, 3.6]} rotation={[0, 0, 0]} restitution={0} /> {/*collider for climbing*/}
+
                 
                 {/* Head */}
-                <group ref={headRef} position={[0, 2.2, 1.3]}>
+                <group ref={headRef} position={[0.2, 0.7, 1]}>
                     <primitive object={models.Head} />
                 </group>
                 
                 {/* Left leg */}
-                <group ref={legLeftRef} position={[1, 1, 1]}>
-                    <primitive object={models.LeftLeg} position={[0, -1.3, -0.2]} />
+                <group ref={legLeftRef} position={[0.8, 3, 1.15]}>
+                    <primitive object={models.LeftLeg} position={[0, -2.3, -0.2]} />
                 </group>
 
                 {/* Right leg (pre-cloned and mirrored) */}
-                <group ref={legRightRef} position={[-1, 1, 1]}>
-                    <primitive object={models.RightLeg} scale={[-1, 1, 1]} position={[0, -1.3, -0.2]} />
+                <group ref={legRightRef} position={[-0.8, 3, 1.15]}>
+                    <primitive object={models.RightLeg} scale={[-1, 1, 1]} position={[0, -2.3, -0.2]} />
                 </group>
 
                 {/* Left arm with weapon */}
-                <group ref={armLeftRef} position={[-1.25, 1.3, 1.3]}>
-                    <primitive object={models.ArmLeft} />
+                <group ref={armLeftRef} position={[-0.8, 3.3, 0.6]}> {/*position set twice to adjust for rotation axis*/}
+                    <primitive object={models.ArmLeft} position ={[0,-2.6,0]}rotation ={[0.15,0,0]}/>
                     <primitive 
                         object={models.WeaponLeft} 
                         rotation={[0, -1.5, 0]} 
-                        scale={[0.15, 0.15, 0.15]} 
-                        position={[-0.2, 0.5, 1]}
+                        scale={[0.13, 0.13, 0.13]} 
+                        position={[-0.2, 0.15, 2]}
                     />
                 </group>
 
                 {/* Right arm with weapon (pre-cloned and mirrored) */}
-                <group ref={armRightRef} position={[1.25, 1.3, 1.3]}>
-                    <primitive object={models.ArmRight} scale={[-1, 1, 1]} />
+                <group ref={armRightRef} position={[0.8, 3.3, 0.6]}> {/*position set twice to adjust for rotation axis*/}
+                    <primitive object={models.ArmRight} scale={[-1, 1, 1]} position={[0,-2.6,0]} rotation ={[0.15,0,0]}/>
                     <primitive 
                         object={models.WeaponRight} 
                         rotation={[0, -1.5, 0]} 
-                        scale={[0.15, 0.15, 0.15]} 
-                        position={[0.2, 0.5, 1]}
+                        scale={[0.13, 0.13, 0.13]} 
+                        position={[0.2, 0.15, 2]}
                     />
                 </group>
             </group>

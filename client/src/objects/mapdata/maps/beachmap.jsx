@@ -186,7 +186,7 @@ const BeachMap = () => {
       </RigidBody>
 
       {walls.map((wall, i) => (
-        <RigidBody key={i} type="fixed" colliders={false} position={wall.pos}>
+        <RigidBody key={i} type="fixed" colliders="cuboid" position={wall.pos}>
           <mesh>
             <boxGeometry args={wall.args} />
             <meshStandardMaterial color="purple" transparent opacity={0.1} depthWrite={false}/>

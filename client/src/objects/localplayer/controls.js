@@ -6,7 +6,7 @@ import { Controls } from "../world/GameCanvas";
 import { useEffect, useRef, useState } from 'react';
 import { usePlayerState } from "../../logic/PlayerState";
 
-export const useDinoControls = (bodyRef, setIsJumping) => {
+export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
     // Get camera reference
     const { camera } = useThree();
     
@@ -31,7 +31,6 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
         const rayOrigin = { x: pos.x, y: pos.y, z: pos.z };
         const rayDir = { x: 0, y: -1, z: 0 };
         const ray = new rapier.Ray(rayOrigin, rayDir);
-        const maxDistance = 0.16; //precise 
 
         // Exclude the character's own collider
         const characterCollider = body.collider(0);
@@ -280,7 +279,7 @@ export const useDinoControls = (bodyRef, setIsJumping) => {
         
         
         // Jump logic - always works when jump is pressed
-        if (jumpPressed && isNearGround() && !jumpTriggered) {
+        if (jumpPressed && isNearGround() && !jumpTriggered) { // && !jumpTriggered
             setJumpTriggered(true); // Reset right-click aiming when jumping
             jump();
             console.log("🦖 Jumping!");

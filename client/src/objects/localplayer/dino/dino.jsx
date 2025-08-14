@@ -99,7 +99,7 @@ export const Dino = ({
     const { updateAdvancedAnimations } = useDinoAnimations();
     
     // Get controller logic - for local players use actual controls, for networked use simulated controls
-    const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping) : null;
+    const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping, 0.16) : null;
     
     // For networked players, simulate movement states based on button states
     useEffect(() => {
