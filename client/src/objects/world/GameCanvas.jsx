@@ -473,7 +473,8 @@ export default function GameCanvas({
           if (gameUpdate.type === 'player_update') {
             console.log(`Updating player ${gameUpdate.playerId} (${gameUpdate.username}):`, {
               position: gameUpdate.position,
-              rotation: gameUpdate.rotation
+              rotation: gameUpdate.rotation,
+              character: gameUpdate.character,
             });
 
             setOtherPlayersData(prev => {
@@ -484,6 +485,7 @@ export default function GameCanvas({
                   rotation: gameUpdate.rotation,
                   buttonStates: gameUpdate.buttonStates || { forward: false, back: false, left: false, right: false, jump: false, sprint: false }, // Store button states instead
                   username: gameUpdate.username,
+                  character: gameUpdate.character,
                   lastUpdate: Date.now()
                 }
               };

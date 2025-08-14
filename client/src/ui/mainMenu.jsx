@@ -25,14 +25,17 @@ function DinoCharacter({ position, rotation, scale = 1, modelPath }) {
   );
 }
 
+// Move characters array outside component to prevent recreation on every render
+const CHARACTERS = [
+  { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb', component: 'dino' },
+  { name: 'Teddy', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
+  { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_display.glb', component: 'dino' }
+];
+
 // Character Carousel Component
 function CharacterCarousel({ currentCharacterIndex, setCurrentCharacterIndex }) {
-  // Character selection array
-  const characters = [
-    { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb', component: 'dino' },
-    { name: 'Teddy', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
-    { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_display.glb', component: 'dino' }
-  ];
+  // Use the stable reference
+  const characters = CHARACTERS;
 
   const { position: centerPosition } = useSpring({
     position: [0, -1.9, -1], // Adjusted Y position for better display
@@ -143,7 +146,7 @@ function CharacterCarousel({ currentCharacterIndex, setCurrentCharacterIndex }) 
 }
 
 // Main menu UI component
-export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSession, onMatchFound, onMatchmakingError }) {
+export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSession, onMatchFound, onMatchmakingError, onCharacterSelect }) {
   const [currentCharacterIndex, setCurrentCharacterIndex] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showGameModeSelect, setShowGameModeSelect] = useState(false);
@@ -151,12 +154,14 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
   const [storePage, setStorePage] = useState(null); // null | 'coins' | 'store'
   const [currentCoins, setCurrentCoins] = useState(0);
 
-  // Character selection array (same as in CharacterCarousel)
-  const characters = [
-    { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb', component: 'dino' },
-    { name: 'Teddy', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
-    { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_display.glb', component: 'dino' }
-  ];
+  // Use the stable reference
+  const characters = CHARACTERS;
+
+  useEffect(() => {
+    if (onCharacterSelect) {
+      onCharacterSelect(characters[currentCharacterIndex]);
+    }
+  }, [currentCharacterIndex, onCharacterSelect]);
 
   // Utility function to get user assets
   const getAssets = async () => {

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import './styling/index.css';
 import GameCanvas from './objects/world/GameCanvas';
 import LoginPage from './ui/LoginPage';
@@ -13,6 +13,10 @@ export default function App() {
   const [otherPlayersData, setOtherPlayersData] = useState({});
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   
+  const onCharacterSelect = useCallback((character) => {
+    setSelectedCharacter(character);
+  }, []);
+
   const handleLogin = (sessionData) => {
     console.log("Login successful, session data:", sessionData);
     setUserSession(sessionData);
@@ -131,6 +135,7 @@ export default function App() {
         userSession={userSession}
         onMatchFound={handleMatchFound}
         onMatchmakingError={handleMatchmakingError}
+        onCharacterSelect={onCharacterSelect}
       />
     );
   }

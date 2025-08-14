@@ -125,7 +125,7 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
    * Start looking for a match
    * This tells the server we want to play with other people
    */
-  const startMatchmaking = async (characterData = null) => {
+  const startMatchmaking = async (characterData) => {
     // Make sure we're connected to the server
     if (!userSession?.socket) {
       onMatchmakingError?.("Not connected to server");
@@ -145,14 +145,14 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
       
       // Properties to help match us with compatible players
       const stringProperties = {
-        "region": "global",        // Everyone uses the same region for simplicity
-        "game_mode": "dino_battle", // Make sure we're all playing the same game mode
-        "character": characterData?.component || "dino" // Include character selection
+        "region": "global",
+        "game_mode": "dino_battle",
+        "character": characterData?.component || "dino"
       };
       const numericProperties = {
-        "skill": 1000,  // Use same skill level for all players (simplified)
-        "version": 1,   // Make sure everyone is using the same game version
-        "character_index": characterData ? (characterData.component === 'bear' ? 1 : 0) : 0 // Character type as number
+        "skill": 1000,
+        "version": 1,
+        "character_index": characterData ? (characterData.component === 'bear' ? 1 : 0) : 0
       };
 
       console.log("Starting matchmaking with parameters:", {
