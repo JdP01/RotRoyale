@@ -140,7 +140,8 @@
   .coins-button {
     background: rgba(255, 215, 0, 0.15);
     border: none;
-    width: 90px;
+    min-width: 90px;
+    width: auto;
     height: 44px;
     border-radius: 8px;
     cursor: pointer;
@@ -155,6 +156,8 @@
     gap: 8px;
     backdrop-filter: blur(10px);
     position: relative;
+    padding: 0 16px;
+    white-space: nowrap;
   }
 
   .coins-button:hover {
