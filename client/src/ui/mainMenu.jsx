@@ -28,7 +28,7 @@ function DinoCharacter({ position, rotation, scale = 1, modelPath }) {
 // Move characters array outside component to prevent recreation on every render
 const CHARACTERS = [
   { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb', component: 'dino' },
-  { name: 'Right Bear Arms', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
+  { name: 'Right To Bear Arms', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
   { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_display.glb', component: 'dino' }
 ];
 
