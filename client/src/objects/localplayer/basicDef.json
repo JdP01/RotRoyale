@@ -1,0 +1,190 @@
+{
+  "bear": {
+    "bodyParts": {
+      "body": "/bear/body.glb",
+      "head": "/bear/head.glb",
+      "leftLeg": "/bear/leg_right.glb",
+      "rightLeg": "/bear/leg_right.glb",
+      "leftArm": "/bear/arm_right.glb",
+      "rightArm": "/bear/arm_right.glb",
+      "weapon": "/objects/game_glock.glb"
+    },
+    "scale": {
+      "main": [0.5, 0.5, 0.5],
+      "body": [1, 1, 1],
+      "head": [1, 1, 1],
+      "leftLeg": [1, 1, 1],
+      "rightLeg": [-1, 1, 1],
+      "leftArm": [1, 1, 1],
+      "rightArm": [-1, 1, 1],
+      "weaponLeft": [0.13, 0.13, 0.13],
+      "weaponRight": [0.13, 0.13, 0.13]
+    },
+    "positions": {
+      "body": [0.1, 0.7, 1],
+      "head": [0.2, 0.7, 1],
+      "leftLeg": [0.8, 3, 1.15],
+      "rightLeg": [-0.8, 3, 1.15],
+      "leftArm": [-0.8, 3.3, 0.6],
+      "rightArm": [0.8, 3.3, 0.6],
+      "leftLegOffset": [0, -2.3, -0.2],
+      "rightLegOffset": [0, -2.3, -0.2],
+      "leftArmOffset": [0, -2.6, 0],
+      "rightArmOffset": [0, -2.6, 0],
+      "weaponLeft": [-0.2, 0.15, 2],
+      "weaponRight": [0.2, 0.15, 2]
+    },
+    "rotations": {
+      "body": [0, 0, 0],
+      "head": [0, 0, 0],
+      "leftLeg": [0, 0, 0],
+      "rightLeg": [0, 0, 0],
+      "leftArm": [0.15, 0, 0],
+      "rightArm": [0.15, 0, 0],
+      "weaponLeft": [0, -1.5, 0],
+      "weaponRight": [0, -1.5, 0]
+    },
+    "physics": {
+      "position": [2, 3, 0],
+      "gravityScale": 5,
+      "friction": 0,
+      "restitution": 0,
+      "enabledRotations": [false, false, false],
+      "interpolate": true
+    },
+    "colliders": {
+      "main": {
+        "type": "capsule",
+        "args": [0.7, 1.3],
+        "position": [0, 7, 2.2],
+        "rotation": [0,0, 0],
+        "restitution": 0
+      }
+    },
+    "movement": {
+      "speed": 1.0,
+      "sprintMultiplier": 1.5,
+      "maxGroundDistance": 0.1,
+      "fallDamageThreshold": 20,
+      "fallDamageMultiplier": 0.5,
+      "lerpFactor": 0.2
+    },
+    "animations": {
+      "walkSpeed": 1.0,
+      "runSpeed": 1.5,
+      "jumpSpeed": 1.0,
+      "idleSpeed": 1.0,
+      "bobHeight": 0.1,
+      "bobSpeed": 5.0,
+      "armSwingAmount": 0.5,
+      "legSwingAmount": 0.8,
+      "tailSwingAmount": 0.0,
+      "tailSwingSpeed": 1.0,
+      "headBobIntensity": 1.0,
+      "jumpBodyTilt": -0.1
+    }
+  },
+  "dino": {
+    "bodyParts": {
+      "body": "/dino/dino_body.glb",
+      "head": "/dino/dino_head.glb",
+      "leftLeg": "/dino/left_leg.glb",
+      "rightLeg": "/dino/left_leg.glb",
+      "leftArm": "/dino/left_arm.glb",
+      "rightArm": "/dino/left_arm.glb",
+      "tail": "/dino/dino_tail.glb",
+      "weapon": "/objects/game_glock.glb"
+    },
+    "scale": {
+      "main": [0.4, 0.4, 0.4],
+      "body": [1, 1, 1],
+      "head": [1, 1, 1],
+      "leftLeg": [1, 1, 1],
+      "rightLeg": [-1, 1, 1],
+      "leftArm": [1, 1, 1],
+      "rightArm": [-1, 1, 1],
+      "tail": [1, 1, 1],
+      "weaponLeft": [0.15, 0.15, 0.15],
+      "weaponRight": [0.15, 0.15, 0.15]
+    },
+    "positions": {
+      "body": [0, 0, 0],
+      "head": [0, 2.2, 1.3],
+      "leftLeg": [1, 1, 1],
+      "rightLeg": [-1, 1, 1],
+      "leftArm": [-1.25, 1.3, 1.3],
+      "rightArm": [1.25, 1.3, 1.3],
+      "tail": [0, 0, 0],
+      "leftLegOffset": [0, -1.3, -0.2],
+      "rightLegOffset": [0, -1.3, -0.2],
+      "leftArmOffset": [0, 0, 0],
+      "rightArmOffset": [0, 0, 0],
+      "weaponLeft": [-0.2, 0.5, 1],
+      "weaponRight": [0.2, 0.5, 1]
+    },
+    "rotations": {
+      "body": [0, 0, 0],
+      "head": [0, 0, 0],
+      "leftLeg": [0, 0, 0],
+      "rightLeg": [0, 0, 0],
+      "leftArm": [0, 0, 0],
+      "rightArm": [0, 0, 0],
+      "tail": [0, 0, 0],
+      "weaponLeft": [0, -1.5, 0],
+      "weaponRight": [0, -1.5, 0]
+    },
+    "physics": {
+      "position": [2, 3, 0],
+      "gravityScale": 5,
+      "friction": 0,
+      "restitution": 0,
+      "enabledRotations": [false, false, false],
+      "interpolate": true
+    },
+    "colliders": {
+      "main": {
+        "type": "capsule",
+        "args": [1, 1.5],
+        "position": [0, 4.55, 2.2],
+        "rotation": [0.8, 0, 0],
+        "restitution": 0
+      },
+      "secondary": {
+        "type": "capsule",
+        "args": [0.8, 0.3],
+        "position": [0, 5, -5.3],
+        "rotation": [-1, 0, 0],
+        "restitution": 0
+      },
+      "tertiary": {
+        "type": "cuboid",
+        "args": [0.77, 0.6, 1.3],
+        "position": [0, 8.6, 4.2],
+        "rotation": [0, 0, 0],
+        "restitution": 0
+      }
+    },
+    "movement": {
+      "speed": 1.0,
+      "sprintMultiplier": 1.5,
+      "maxGroundDistance": 0.016,
+      "fallDamageThreshold": 20,
+      "fallDamageMultiplier": 0.5,
+      "lerpFactor": 0.2
+    },
+    "animations": {
+      "walkSpeed": 1.0,
+      "runSpeed": 1.5,
+      "jumpSpeed": 1.0,
+      "idleSpeed": 0.8,
+      "bobHeight": 0.12,
+      "bobSpeed": 4.5,
+      "armSwingAmount": 0.6,
+      "legSwingAmount": 1.0,
+      "tailSwingAmount": 1.0,
+      "tailSwingSpeed": 1.2,
+      "headBobIntensity": 1.1,
+      "jumpBodyTilt": -0.15
+    }
+  }
+}

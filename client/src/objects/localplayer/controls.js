@@ -6,7 +6,7 @@ import { Controls } from "../world/GameCanvas";
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { usePlayerState } from "../../logic/PlayerState";
 
-export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
+export const useDinoControls = (bodyRef, setIsJumping, maxDistance) => {
     const { camera } = useThree();
     const { stamina, isExhausted, consumeStamina, regenerateStamina, fireRaycast } = usePlayerState();
     const { rapier, world } = useRapier();
@@ -49,22 +49,41 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
         right: false, jump: false, sprint: false
     });
 
-    // Optimized ground detection
+    // Improved ground detection using shapecasting
     const isNearGround = useCallback(() => {
         const body = bodyRef.current;
         if (!body) return false;
 
         const pos = body.translation();
-        const ray = new rapier.Ray(pos, { x: 0, y: -10, z: 0 });
-        const hit = world.castRay(ray, maxDistance, true, undefined, undefined, body.collider(0));
-        
+        console.log("my position", pos);
+        //Create a small sphere shape for shapecasting
+        const shape = new rapier.Ball(0.1);
+        const origin = { x: pos.x, y: pos.y, z: pos.z };
+        const dir = { x: 0, y: -10, z: 0 };
+
+        console.log( "maxDistance", maxDistance);
+        // Use shapeCast instead of castRay for better ground detection
+        const hit = world.castShape(
+            origin,
+            { w: 1, x: 0, y: 0, z: 0 }, // rotation quaternion
+            dir,
+            shape,
+            maxDistance, //could use maxdistance instea as the dir y 
+            true,
+            undefined,
+            undefined,
+            undefined // collision ignores
+        );
+        console.log("Hit result:", hit);
         return !!hit;
     }, [bodyRef, rapier, world, maxDistance]);
 
-    // Optimized jump function
-    const jump = useCallback(() => {
+    // Streamlined jump function
+    const jump =  useCallback(() => {
         if (!bodyRef.current) return;
+        
         setIsJumping(true);
+        console.log("I am jumping");
         bodyRef.current.applyImpulse({ x: 0, y: 25, z: 0 });
     }, [bodyRef, setIsJumping]);
 
@@ -226,8 +245,8 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance = 0.16) => {
         if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
         setCharacterRotation(characterRotation + angleDiff * Math.min(1, delta * 10));
 
-        // Jump logic
-        if (jumpPressed && isNearGround() && !jumpTriggered) {
+        // Improved jump logic with shapecasting
+        if (jumpPressed && isNearGround()) {//&& !jumpTriggered
             setJumpTriggered(true);
             jump();
         }

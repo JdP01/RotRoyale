@@ -2,8 +2,7 @@ import React, { Suspense, useMemo, useState, useRef, useEffect, useCallback } fr
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Box, KeyboardControls, OrbitControls, Sky } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
-import { Dino } from '../localplayer/dino/dino';
-import { Bear } from '../localplayer/bear/bear'
+import { BasicCharacter } from '../localplayer/basic';
 import * as THREE from "three";
 import { CameraRig } from '../localplayer/CameraRig';
 import GameEnvironment from './GameEnvironment';
@@ -23,10 +22,11 @@ export const Controls = {
 }
 
 export const OtherPlayer = ({ playerData, userSession }) => {
-    const CharacterComponent = playerData.character?.component === 'bear' ? Bear : Dino;
+    const characterType = playerData.character?.component === 'bear' ? 'bear' : 'dino';
     
     return (
-        <CharacterComponent
+        <BasicCharacter
+            characterType={characterType}
             ref={useRef()}
             userSession={userSession}
             isNetworkedPlayer={true}
@@ -328,29 +328,17 @@ const GameLogic = ({
   return (
     <>
       {/* Main player */}
-      {selectedCharacter?.component === 'bear' ? (
-        <Bear
-          ref={dinoRef}
-          onRotationChange={onRotationChange}
-          onCameraPitchChange={onCameraPitchChange}
-          onAimingChange={onAimingChange}
-          onButtonStatesChange={setLocalPlayerButtonStates}
-          castShadow
-          userSession={userSession}
-          currentMatch={currentMatch}
-        />
-      ) : (
-        <Dino
-          ref={dinoRef}
-          onRotationChange={onRotationChange}
-          onCameraPitchChange={onCameraPitchChange}
-          onAimingChange={onAimingChange}
-          onButtonStatesChange={setLocalPlayerButtonStates}
-          castShadow
-          userSession={userSession}
-          currentMatch={currentMatch}
-        />
-      )}
+      <BasicCharacter
+        characterType={selectedCharacter?.component === 'bear' ? 'bear' : 'dino'}
+        ref={dinoRef}
+        onRotationChange={onRotationChange}
+        onCameraPitchChange={onCameraPitchChange}
+        onAimingChange={onAimingChange}
+        onButtonStatesChange={setLocalPlayerButtonStates}
+        castShadow
+        userSession={userSession}
+        currentMatch={currentMatch}
+      />
 
       {/* Other players - simplified rendering */}
       {Object.entries(otherPlayersData).map(([playerId, playerData]) => {

@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-export const useDinoAnimations = () => {
+export const useBasicAnimations = () => {
     // Animation state refs - using refs for performance optimization
     const legAngle = useRef(0);
     const headBobAngle = useRef(0);
@@ -12,7 +12,7 @@ export const useDinoAnimations = () => {
     // Previous state tracking for smooth transitions
     const prevMovingState = useRef({ isMoving: false, isJumping: false });
 
-    const updateAdvancedAnimations = (delta, animationState, refs) => {
+    const updateAdvancedAnimations = (delta, animationState, refs, animConfig = {}) => {
         const { isMoving, isSprinting, isJumping } = animationState;
         const { 
             legLeftRef, 
@@ -24,19 +24,37 @@ export const useDinoAnimations = () => {
             mainGroupRef 
         } = refs;
 
-        // Determine animation speeds based on sprint status
-        const legAnimationSpeed = isSprinting ? 25 : 15;
-        const headBobSpeed = isSprinting ? 12 : 7;
-        const headBobIntensity = isSprinting ? 0.05 : 0.025;
-        const armAnimationSpeed = isSprinting ? 22 : 13;
-        const bodyBobSpeed = isSprinting ? 20 : 12;
-        const bodyBobIntensity = isSprinting ? 0.1 : 0.06;
+        // Use configuration values or defaults
+        const config = {
+            walkSpeed: animConfig.walkSpeed || 1.0,
+            runSpeed: animConfig.runSpeed || 1.5,
+            jumpSpeed: animConfig.jumpSpeed || 1.0,
+            idleSpeed: animConfig.idleSpeed || 1.0,
+            bobHeight: animConfig.bobHeight || 0.1,
+            bobSpeed: animConfig.bobSpeed || 5.0,
+            armSwingAmount: animConfig.armSwingAmount || 0.5,
+            legSwingAmount: animConfig.legSwingAmount || 0.8,
+            tailSwingAmount: animConfig.tailSwingAmount || 0.2,
+            tailSwingSpeed: animConfig.tailSwingSpeed || 1.0,
+            headBobIntensity: animConfig.headBobIntensity || 1.0,
+            jumpBodyTilt: animConfig.jumpBodyTilt || -0.1,
+            ...animConfig
+        };
+
+        // Determine animation speeds based on sprint status and config
+        const legAnimationSpeed = isSprinting ? (25 * config.runSpeed) : (15 * config.walkSpeed);
+        const headBobSpeed = isSprinting ? (12 * config.runSpeed) : (7 * config.walkSpeed);
+        const headBobIntensity = (isSprinting ? 0.05 : 0.025) * config.bobHeight * config.headBobIntensity;
+        const armAnimationSpeed = isSprinting ? (22 * config.runSpeed) : (13 * config.walkSpeed);
+        const bodyBobSpeed = isSprinting ? (20 * config.bobSpeed) : (12 * config.bobSpeed);
+        const bodyBobIntensity = (isSprinting ? 0.1 : 0.06) * config.bobHeight;
+        const tailSpeed = isSprinting ? (12 * config.tailSwingSpeed) : (7 * config.tailSwingSpeed);
         
         // Handle body tilt during jumping
-        if (mainGroupRef.current) {
+        if (mainGroupRef && mainGroupRef.current) {
             if (isJumping) {
                 // Apply lerping to body rotation for smoother transitions
-                const targetRotX = -0.1;
+                const targetRotX = config.jumpBodyTilt;
                 mainGroupRef.current.rotation.x += (targetRotX - mainGroupRef.current.rotation.x) * 0.5;
             } else {
                 mainGroupRef.current.rotation.x += (0 - mainGroupRef.current.rotation.x) * 0.6;
@@ -51,7 +69,9 @@ export const useDinoAnimations = () => {
             // Update ref values directly instead of using setState
             legAngle.current = (legAngle.current + delta * legAnimationSpeed) % (Math.PI * 2);
             headBobAngle.current = (headBobAngle.current + delta * headBobSpeed) % (Math.PI * 2);
-            tailAngle.current = (tailAngle.current + delta * (isSprinting ? 12 : 7)) % (Math.PI * 2);
+            if (tailRef && tailRef.current) {
+                tailAngle.current = (tailAngle.current + delta * tailSpeed) % (Math.PI * 2);
+            }
             armAngle.current = (armAngle.current + delta * armAnimationSpeed) % (Math.PI * 2);
             bodyBobAngle.current = (bodyBobAngle.current + delta * bodyBobSpeed) % (Math.PI * 2);
             
@@ -63,9 +83,9 @@ export const useDinoAnimations = () => {
                 bodyBobHeight.current *= 0.9;
             }
             
-            // Apply animation to legs with smooth transitions
-            if (legLeftRef.current && legRightRef.current) {
-                const legAmplitude = isSprinting ? 0.8 : 0.5;
+            // Apply animation to legs with smooth transitions (only if refs exist)
+            if (legLeftRef && legLeftRef.current && legRightRef && legRightRef.current) {
+                const legAmplitude = (isSprinting ? 0.8 : 0.5) * config.legSwingAmount;
                 
                 const targetLeftLegRotation = Math.sin(legAngle.current) * legAmplitude;
                 const targetRightLegRotation = Math.sin(legAngle.current + Math.PI) * legAmplitude;
@@ -74,9 +94,9 @@ export const useDinoAnimations = () => {
                 legRightRef.current.rotation.x += (targetRightLegRotation - legRightRef.current.rotation.x) * 0.3;
             }
             
-            // Apply arm animations - opposite phase to the legs for natural cross-body motion
-            if (armLeftRef.current && armRightRef.current) {
-                const armAmplitude = isSprinting ? 0.5 : 0.3;
+            // Apply arm animations - opposite phase to the legs for natural cross-body motion (only if refs exist)
+            if (armLeftRef && armLeftRef.current && armRightRef && armRightRef.current) {
+                const armAmplitude = (isSprinting ? 0.5 : 0.3) * config.armSwingAmount;
                 
                 const targetLeftArmRotation = Math.sin(armAngle.current + Math.PI) * armAmplitude;
                 const targetRightArmRotation = Math.sin(armAngle.current) * armAmplitude;
@@ -85,58 +105,57 @@ export const useDinoAnimations = () => {
                 armRightRef.current.rotation.x += (targetRightArmRotation - armRightRef.current.rotation.x) * 0.25;
             }
             
-            // Apply head bobbing - only when not jumping
-            if (headRef.current && !isJumping) {
+            // Apply head bobbing - only when not jumping (only if ref exists)
+            if (headRef && headRef.current && !isJumping) {
                 const headCurve = Math.sin(headBobAngle.current) * headBobIntensity;
                 headRef.current.rotation.x += (headCurve - headRef.current.rotation.x) * 0.2;
             }
             
-            // Apply tail animation
-            if (tailRef.current) {
-                const tailSwingHorizontal = Math.sin(tailAngle.current) * (isSprinting ? 0.2 : 0.15);
-                const tailSwingVertical = Math.sin(tailAngle.current * 2) * 0.05;
+            // Apply tail animation (only if tail exists)
+            if (tailRef && tailRef.current) {
+                const tailSwingHorizontal = Math.sin(tailAngle.current) * (isSprinting ? 0.2 : 0.15) * config.tailSwingAmount;
+                const tailSwingVertical = Math.sin(tailAngle.current * 2) * 0.05 * config.tailSwingAmount;
                 
                 tailRef.current.rotation.y += (tailSwingHorizontal - tailRef.current.rotation.y) * 0.15;
                 tailRef.current.rotation.x += (tailSwingVertical - tailRef.current.rotation.x) * 0.1;
                 
                 // During jumps, add upward tail motion
                 if (isJumping) {
-                    const jumpTailLift = 0.2;
+                    const jumpTailLift = 0.2 * config.tailSwingAmount;
                     tailRef.current.rotation.x += (jumpTailLift - tailRef.current.rotation.x) * 0.2;
                 }
             }
-        } else {
+                } else {
             // If just stopped moving, smoothly reset positions
             if (stoppedMoving || !isMoving) {
-                // Reset leg positions with lerping when not moving
-                if (legLeftRef.current && legRightRef.current) {
+                // Reset leg positions with lerping when not moving (only if refs exist)
+                if (legLeftRef && legLeftRef.current && legRightRef && legRightRef.current) {
                     legLeftRef.current.rotation.x += (0 - legLeftRef.current.rotation.x) * 0.2;
                     legRightRef.current.rotation.x += (0 - legRightRef.current.rotation.x) * 0.2;
                 }
                 
-                // Reset arm positions with lerping when not moving
-                if (armLeftRef.current && armRightRef.current) {
+                // Reset arm positions with lerping when not moving (only if refs exist)
+                if (armLeftRef && armLeftRef.current && armRightRef && armRightRef.current) {
                     armLeftRef.current.rotation.x += (0 - armLeftRef.current.rotation.x) * 0.2;
-                    armRightRef.current.rotation.x += (0 - armRightRef.current.rotation.x) * 0.2;
                 }
                 
-                // Reset head rotation gradually when stopping
-                if (headRef.current) {
+                // Reset head rotation gradually when stopping (only if ref exists)
+                if (headRef && headRef.current) {
                     headRef.current.rotation.x += (0 - headRef.current.rotation.x) * 0.2;
                 }
                 
-                // For tail when idle, have subtle idle animation
-                if (tailRef.current) {
-                    tailAngle.current = (tailAngle.current + delta * 2) % (Math.PI * 2);
-                    const idleTailMotion = Math.sin(tailAngle.current) * 0.05;
+                // For tail when idle, have subtle idle animation (only if tail exists)
+                if (tailRef && tailRef.current) {
+                    tailAngle.current = (tailAngle.current + delta * config.idleSpeed) % (Math.PI * 2);
+                    const idleTailMotion = Math.sin(tailAngle.current) * 0.05 * config.tailSwingAmount;
                     
                     tailRef.current.rotation.y += (idleTailMotion - tailRef.current.rotation.y) * 0.05;
                     tailRef.current.rotation.x += (0 - tailRef.current.rotation.x) * 0.1;
                 }
                 
-                // For arms when idle, very subtle motion
-                if (armLeftRef.current && armRightRef.current) {
-                    armAngle.current = (armAngle.current + delta) % (Math.PI * 2);
+                // For arms when idle, very subtle motion (only if refs exist)
+                if (armLeftRef && armLeftRef.current && armRightRef && armRightRef.current) {
+                    armAngle.current = (armAngle.current + delta * config.idleSpeed) % (Math.PI * 2);
                     const idleArmMotion = Math.sin(armAngle.current) * 0.03;
                     
                     armLeftRef.current.rotation.z += (idleArmMotion - armLeftRef.current.rotation.z) * 0.03;
@@ -148,13 +167,13 @@ export const useDinoAnimations = () => {
             }
         } 
         
-        // Always reset head rotation during jumps to avoid conflicts
-        if (isJumping && headRef.current) {
+        // Always reset head rotation during jumps to avoid conflicts (only if ref exists)
+        if (isJumping && headRef && headRef.current) {
             headRef.current.rotation.x += (0 - headRef.current.rotation.x) * 0.2;
         }
         
-        // During jumps, animate arms to extend forward slightly
-        if (isJumping && armLeftRef.current && armRightRef.current) {
+        // During jumps, animate arms to extend forward slightly (only if refs exist)
+        if (isJumping && armLeftRef && armLeftRef.current && armRightRef && armRightRef.current) {
             const jumpArmPose = -0.3;
             armLeftRef.current.rotation.x += (jumpArmPose - armLeftRef.current.rotation.x) * 0.15;
             armRightRef.current.rotation.x += (jumpArmPose - armRightRef.current.rotation.x) * 0.15;
