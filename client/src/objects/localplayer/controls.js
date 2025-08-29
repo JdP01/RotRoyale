@@ -246,11 +246,14 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance) => {
         setCharacterRotation(characterRotation + angleDiff * Math.min(1, delta * 10));
 
         // Improved jump logic with shapecasting
-        if (jumpPressed && isNearGround()) {//&& !jumpTriggered
+        if (jumpPressed && isNearGround() && !jumpTriggered) {
             setJumpTriggered(true);
             jump();
         }
-        if (!isNearGround()) setJumpTriggered(false);
+        if (!jumpPressed && isNearGround()) {
+            setJumpTriggered(false);
+            setIsJumping(false); // Reset jump animation when landed
+        }
 
         // Stamina regeneration
         if (!sprinting && !regenerationDelayActive.current && stamina < 100 && 
