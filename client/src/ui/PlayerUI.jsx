@@ -29,12 +29,32 @@ const Crosshair = ({ isAiming = false }) => {
 };
 
 export const PlayerUI = ({ isAiming = false }) => {
-  const { health, stamina, maxHealth, maxStamina, isDead, reset } = usePlayerState();
+  const { 
+    health, 
+    stamina, 
+    maxHealth, 
+    maxStamina, 
+    isDead, 
+    reset,
+    damageOverlayVisible,
+    damageOverlayIntensity
+  } = usePlayerState();
 
   return (
     <>
       {/* Dynamic Crosshairs */}
       <Crosshair isAiming={isAiming} />
+
+      {/* Damage Overlay */}
+      {damageOverlayVisible && (
+        <div 
+          className="damage-overlay"
+          style={{
+            opacity: damageOverlayIntensity,
+            backgroundColor: `rgba(255, 0, 0, ${damageOverlayIntensity * 0.9})`
+          }}
+        />
+      )}
 
       {/* Player UI - Bottom left */}
       <div className="player-ui">
@@ -69,10 +89,10 @@ export const PlayerUI = ({ isAiming = false }) => {
           <div className="death-overlay">
             <div className="death-content">
               <h2>💀 You Died!</h2>
-              <p>Don't worry, you can respawn</p>
-              <button onClick={reset} className="respawn-button">
-                🔄 Respawn
-              </button>
+              <p>Returning to lobby in a few seconds...</p>
+              <div className="death-timer">
+                <p>⏱️ Game Over</p>
+              </div>
             </div>
           </div>
         )}

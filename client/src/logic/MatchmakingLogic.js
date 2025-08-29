@@ -224,6 +224,25 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
     }
   };
 
+  /**
+   * Leave current match (called when player dies or is kicked)
+   * This is different from cancelling matchmaking - it's for leaving an active match
+   */
+  const leaveMatch = async (reason = "Player left match") => {
+    console.log("🚪 Leaving match:", reason);
+    
+    // Reset all matchmaking state
+    setIsSearching(false);
+    setSearchStartTime(null);
+    setMatchTicket(null);
+    setElapsedTime(0);
+    setPlayersInMatch([]);
+    
+    // If we have a socket connection, we could notify the server about leaving
+    // but typically this is handled by the game session itself
+    console.log("Match left successfully");
+  };
+
   // Return all the state and functions that the UI component needs
   return {
     // Current state
@@ -237,6 +256,7 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
     
     // Actions
     startMatchmaking,
-    cancelMatchmaking
+    cancelMatchmaking,
+    leaveMatch
   };
 };

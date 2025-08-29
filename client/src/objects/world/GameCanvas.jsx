@@ -49,7 +49,8 @@ const GameLogic = ({
   isAiming,
   onAimingChange,
   otherPlayersData,
-  selectedCharacter
+  selectedCharacter,
+  backToMenu
 }) => {
   const lastSentTime = useRef(0);
   const [localPlayerButtonStates, setLocalPlayerButtonStates] = useState({
@@ -62,7 +63,7 @@ const GameLogic = ({
   });
   
   // Get raycast visualization state and player state functions
-  const { raycastVisible, raycastStart, raycastEnd, enemyRaycastVisible, enemyRaycastStart, enemyRaycastEnd, setBroadcastCallback, takeDamage, showEnemyRaycast } = usePlayerState();
+  const { raycastVisible, raycastStart, raycastEnd, enemyRaycastVisible, enemyRaycastStart, enemyRaycastEnd, setBroadcastCallback, setLobbyKickCallback, takeDamage, showEnemyRaycast } = usePlayerState();
 
   // Set up broadcast callback for sending game events to server
   useEffect(() => {
@@ -106,10 +107,26 @@ const GameLogic = ({
       setBroadcastCallback(broadcastGameEvent);
     }
     
+    // Set up lobby kick callback for when player dies
+    if (backToMenu) {
+      const lobbyKickHandler = (reason) => {
+        console.log("🚪 Player kicked to lobby:", reason);
+        
+        // Optional: Show a message to the user
+        alert(reason || "You have been returned to the lobby.");
+        
+        // Return to menu/lobby
+        backToMenu();
+      };
+      
+      setLobbyKickCallback(lobbyKickHandler);
+    }
+    
     return () => {
       setBroadcastCallback(null);
+      setLobbyKickCallback(null);
     };
-  }, [currentMatch, userSession, setBroadcastCallback]);
+  }, [currentMatch, userSession, setBroadcastCallback, setLobbyKickCallback, backToMenu]);
 
   // Handle hit detection for incoming raycast shots
   const handleRaycastHit = useCallback((raycastData) => {
@@ -658,6 +675,7 @@ export default function GameCanvas({
                 onAimingChange={handleAimingChange}
                 otherPlayersData={otherPlayersData}
                 selectedCharacter={selectedCharacter}
+                backToMenu={backToMenu}
               />
 
             </Physics>
