@@ -234,6 +234,8 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance) => {
         // Diagonal movement adjustments
         if ((forwardPressed || backPressed) && (leftPressed || rightPressed)) {
             if (forwardPressed && leftPressed && !rightPressed) targetRotation = cameraRotation + Math.PI / 4;
+            else if(forwardPressed && leftPressed && rightPressed) targetRotation = cameraRotation; 
+            else if(backPressed && leftPressed && rightPressed) targetRotation = cameraRotation + Math.PI; 
             else if (forwardPressed && rightPressed && !leftPressed) targetRotation = cameraRotation - Math.PI / 4;
             else if (backPressed && leftPressed && !rightPressed) targetRotation = cameraRotation + 3 * Math.PI / 4;
             else if (backPressed && rightPressed && !leftPressed) targetRotation = cameraRotation - 3 * Math.PI / 4;
