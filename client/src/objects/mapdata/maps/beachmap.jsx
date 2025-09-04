@@ -161,6 +161,10 @@ const BeachMap = () => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+        // Ensure material supports shadows
+        if (child.material) {
+          child.material.shadowSide = THREE.DoubleSide;
+        }
       }
     });
   }, [gameMap]);
@@ -194,7 +198,8 @@ const BeachMap = () => {
         </RigidBody>
       ))}
 
-      <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Water plane */}
+      <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[1000, 1000]} />
         <meshStandardMaterial 
           color="#0074ad" 
