@@ -433,6 +433,12 @@ export default function GameCanvas({
   // Get player state for respawn functionality
   const { reset: resetPlayerState } = usePlayerState();
 
+  // Reset player state when GameCanvas first loads (new game start)
+  useEffect(() => {
+    console.log("🎮 GameCanvas mounted - resetting player state for new game");
+    resetPlayerState();
+  }, []); // Empty dependency array means this runs once when component mounts
+
   // Enhanced socket event handling
   useEffect(() => { //Listens actively for changes in userSession, only runs when userSession changes
     if (!userSession?.socket) return;

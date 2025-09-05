@@ -3,6 +3,7 @@ import './styling/index.css';
 import GameCanvas from './objects/world/GameCanvas';
 import LoginPage from './ui/LoginPage';
 import { MenuUI, MatchmakingUIWrapper } from './ui/mainMenu';
+import { usePlayerState } from './logic/PlayerState';
 
 export default function App() { 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -12,6 +13,9 @@ export default function App() {
   const [connectedPlayers, setConnectedPlayers] = useState([]);
   const [otherPlayersData, setOtherPlayersData] = useState({});
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  
+  // Get reset function from PlayerState
+  const { reset: resetPlayerState } = usePlayerState();
   
   const onCharacterSelect = useCallback((character) => {
     setSelectedCharacter(character);
@@ -28,6 +32,9 @@ export default function App() {
     if (userSession?.socket) {
       userSession.socket.disconnect();
     }
+    
+    // Reset player state on logout
+    resetPlayerState();
     setUserSession(null);
     setIsLoggedIn(false);
     setGameState('menu');
@@ -46,6 +53,8 @@ export default function App() {
       console.log("Initial players in match:", matchData.users);
     }
 
+    // Reset player state when starting a new game
+    resetPlayerState();
     setGameState('playing');
 
     try {
@@ -97,6 +106,8 @@ export default function App() {
 
   const startSinglePlayer = (characterData) => {
     setSelectedCharacter(characterData);
+    // Reset player state when starting a new game
+    resetPlayerState();
     setGameState('playing');
   };
 
@@ -114,6 +125,8 @@ export default function App() {
       }
     }
 
+    // Reset player state when returning to lobby
+    resetPlayerState();
     setGameState('menu');
     setCurrentMatch(null);
     setConnectedPlayers([]);
