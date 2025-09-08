@@ -82,7 +82,7 @@ const GameLogic = ({
           
           const data = JSON.stringify(gameEvent);
           
-          console.log('🌐 Broadcasting game event:', gameEvent);
+          // console.log('🌐 Broadcasting game event:', gameEvent);
           
           if (typeof socket.sendMatchData === 'function') {
             socket.sendMatchData(matchId, opCode, data);
@@ -156,81 +156,94 @@ const GameLogic = ({
     raycaster.set(rayStart, rayDirection);
     raycaster.far = rayDistance; // Limit ray to the shot distance
     
-    // Get all dino meshes - access Three.js objects properly
+    // Get all dino meshes - properly access Three.js objects from the physics body
     const dinoMeshes = [];
     const playerPosition = dinoRef.current.translation();
     const playerPos = new THREE.Vector3(playerPosition.x, playerPosition.y, playerPosition.z);
     
     console.log(`🔍 Player position: (${playerPosition.x.toFixed(2)}, ${playerPosition.y.toFixed(2)}, ${playerPosition.z.toFixed(2)})`);
     
-    // The physics body doesn't have traverse - we need to access the Three.js children directly
-    // Get the Three.js object from the physics body
-    const physicsBodyChildren = dinoRef.current.children || [];
-    console.log(`🔍 Physics body children count: ${physicsBodyChildren.length}`);
+    // Try to get the main group reference that we attached in BasicCharacter
+    const mainGroup = dinoRef.current.mainGroup;
     
-    // Method 1: Search through physics body children (Three.js objects)
-    physicsBodyChildren.forEach((child, index) => {
-      console.log(`📦 Physics body child ${index}:`, child.type, child.name || 'unnamed');
+    if (mainGroup) {
+      console.log(`🔍 Found main group reference from physics body`);
+      console.log(`🔍 Main group children count: ${mainGroup.children.length}`);
       
-      if (child.traverse) {
-        child.traverse((subChild) => {
-          console.log(`  📦 Sub-child:`, subChild.type, subChild.name || 'unnamed', subChild.isMesh ? 'MESH' : '');
-          if (subChild.isMesh && subChild.geometry) {
-            const meshWorldPosition = new THREE.Vector3();
-            subChild.getWorldPosition(meshWorldPosition);
-            console.log(`    📍 Mesh world position: (${meshWorldPosition.x.toFixed(2)}, ${meshWorldPosition.y.toFixed(2)}, ${meshWorldPosition.z.toFixed(2)})`);
-            
-            const distance = meshWorldPosition.distanceTo(playerPos);
-            console.log(`    📏 Distance to player: ${distance.toFixed(2)}`);
-            
-            if (distance < 10) {
-              dinoMeshes.push(subChild);
-              console.log(`    ✅ Added mesh to hit detection array`);
-            }
+      // Traverse the main group to find all meshes
+      mainGroup.traverse((child) => {
+        if (child.isMesh && child.geometry) {
+          // Get world position of the mesh
+          const meshWorldPosition = new THREE.Vector3();
+          child.getWorldPosition(meshWorldPosition);
+          
+          // Only include meshes that are reasonably close to the player position
+          const distance = meshWorldPosition.distanceTo(playerPos);
+          console.log(`  📦 Found mesh: ${child.name || 'unnamed'} at distance ${distance.toFixed(2)}`);
+          
+          if (distance < 15) { // Generous distance check
+            dinoMeshes.push(child);
+            console.log(`    ✅ Added mesh to hit detection array: ${child.name || 'unnamed'}`);
           }
-        });
-      } else if (child.isMesh && child.geometry) {
-        // Direct mesh child
-        const meshWorldPosition = new THREE.Vector3();
-        child.getWorldPosition(meshWorldPosition);
-        const distance = meshWorldPosition.distanceTo(playerPos);
-        console.log(`  � Direct mesh at distance: ${distance.toFixed(2)}`);
-        
-        if (distance < 10) {
-          dinoMeshes.push(child);
-          console.log(`  ✅ Added direct mesh to hit detection array`);
         }
-      }
-    });
-    
-    console.log(`🔍 Found ${dinoMeshes.length} meshes from physics body children`);
-    
-    // Method 2: If still no meshes, search the scene more broadly
-    if (dinoMeshes.length === 0) {
-      console.log(`🔍 No meshes found in physics body, searching scene...`);
+      });
+    } else {
+      console.log(`❌ Main group reference not found, trying fallback method...`);
       
-      // Get the scene by traversing up from the physics body
-      let currentNode = dinoRef.current.parent;
-      while (currentNode && currentNode.type !== 'Scene') {
-        currentNode = currentNode.parent;
-      }
+      // Fallback: Get the Three.js object from the Rapier physics body
+      const threeJSObject = dinoRef.current.object;
       
-      if (currentNode && currentNode.traverse) {
-        console.log(`🔍 Found scene, searching for meshes near player...`);
-        currentNode.traverse((child) => {
+      if (threeJSObject) {
+        console.log(`🔍 Found Three.js object from physics body: ${threeJSObject.type}`);
+        console.log(`🔍 Three.js object children count: ${threeJSObject.children.length}`);
+        
+        // Traverse the Three.js object hierarchy to find all meshes
+        threeJSObject.traverse((child) => {
           if (child.isMesh && child.geometry) {
+            // Get world position of the mesh
             const meshWorldPosition = new THREE.Vector3();
             child.getWorldPosition(meshWorldPosition);
             
+            // Only include meshes that are reasonably close to the player position
             const distance = meshWorldPosition.distanceTo(playerPos);
-            if (distance < 8) { // Close to player
-              console.log(`🔍 Scene mesh found at distance ${distance.toFixed(2)}:`, child.name || 'unnamed', child.type);
+            console.log(`  📦 Found mesh: ${child.name || 'unnamed'} at distance ${distance.toFixed(2)}`);
+            
+            if (distance < 15) { // Generous distance check
               dinoMeshes.push(child);
+              console.log(`    ✅ Added mesh to hit detection array: ${child.name || 'unnamed'}`);
             }
           }
         });
+      } else {
+        console.log(`❌ Could not access Three.js object from physics body - using scene search`);
+        
+        // Last resort: Search the scene for meshes near the player position
+        // Get the scene by traversing up from any object
+        let scene = null;
+        if (threeJSObject && threeJSObject.parent) {
+          let currentNode = threeJSObject.parent;
+          while (currentNode && currentNode.type !== 'Scene') {
+            currentNode = currentNode.parent;
+          }
+          scene = currentNode;
+        }
+        
+        if (scene) {
+          console.log(`🔍 Fallback: searching scene for meshes near player...`);
+          scene.traverse((child) => {
+            if (child.isMesh && child.geometry) {
+              const meshWorldPosition = new THREE.Vector3();
+              child.getWorldPosition(meshWorldPosition);
+              
+              const distance = meshWorldPosition.distanceTo(playerPos);
+              if (distance < 8) { // Close to player
+                console.log(`🔍 Scene mesh found at distance ${distance.toFixed(2)}:`, child.name || 'unnamed');
+                dinoMeshes.push(child);
+              }
+            }
+          });
+        }
       }
-      console.log(`🔍 Scene search added ${dinoMeshes.length} meshes`);
     }
     
     console.log(`🎯 Final mesh count for ray testing: ${dinoMeshes.length}`);
@@ -238,7 +251,13 @@ const GameLogic = ({
     // Test ray intersection against all found meshes
     if (dinoMeshes.length > 0) {
       console.log(`🎯 Testing raycast intersection against ${dinoMeshes.length} meshes...`);
-      const intersections = raycaster.intersectObjects(dinoMeshes, true);
+      
+      // Update world matrices to ensure accurate intersections
+      dinoMeshes.forEach(mesh => {
+        mesh.updateMatrixWorld(true);
+      });
+      
+      const intersections = raycaster.intersectObjects(dinoMeshes, false); // Don't recursively check children since we already collected all meshes
       
       console.log(`🎯 Raycast intersections found: ${intersections.length}`);
       
@@ -247,38 +266,54 @@ const GameLogic = ({
         const hitDistance = rayStart.distanceTo(hitPoint);
         const hitObject = intersections[0].object;
         
-        console.log(`💥 DIRECT HIT! Dino mesh hit by raycast from ${raycastData.username}!`);
-        console.log(`Hit point: (${hitPoint.x.toFixed(2)}, ${hitPoint.y.toFixed(2)}, ${hitPoint.z.toFixed(2)})`);
-        console.log(`Hit distance: ${hitDistance.toFixed(2)} units`);
-        console.log(`Hit object:`, hitObject.name || 'unnamed mesh', hitObject.type);
+        console.log(`🎯 HIT DETECTION: MESH INTERSECTION SUCCESS from ${raycastData.username}`);
+        console.log(`   └─ Hit object: ${hitObject.name || 'unnamed mesh'} (${hitObject.type})`);
+        console.log(`   └─ Hit point: (${hitPoint.x.toFixed(2)}, ${hitPoint.y.toFixed(2)}, ${hitPoint.z.toFixed(2)})`);
+        console.log(`   └─ Hit distance: ${hitDistance.toFixed(2)}`);
         
         takeDamage(raycastData.damage || 25, `shot by ${raycastData.username}`);
         return true;
       } else {
-        console.log(`🎯 Shot from ${raycastData.username} missed - no mesh intersection detected`);
-        console.log(`Ray details: start(${rayStart.x.toFixed(2)}, ${rayStart.y.toFixed(2)}, ${rayStart.z.toFixed(2)}) end(${rayEnd.x.toFixed(2)}, ${rayEnd.y.toFixed(2)}, ${rayEnd.z.toFixed(2)})`);
+        console.log(`🎯 HIT DETECTION: Shot from ${raycastData.username} missed - no mesh intersection detected`);
+        console.log(`   └─ Ray: start(${rayStart.x.toFixed(2)}, ${rayStart.y.toFixed(2)}, ${rayStart.z.toFixed(2)}) end(${rayEnd.x.toFixed(2)}, ${rayEnd.y.toFixed(2)}, ${rayEnd.z.toFixed(2)})`);
+        console.log(`   └─ Ray direction: (${rayDirection.x.toFixed(2)}, ${rayDirection.y.toFixed(2)}, ${rayDirection.z.toFixed(2)})`);
+        console.log(`   └─ Ray distance: ${rayDistance.toFixed(2)}`);
+        
+        // Log details about each mesh for debugging
+        dinoMeshes.forEach((mesh, index) => {
+          const meshWorldPos = new THREE.Vector3();
+          mesh.getWorldPosition(meshWorldPos);
+          console.log(`   └─ Mesh ${index}: ${mesh.name || 'unnamed'} at (${meshWorldPos.x.toFixed(2)}, ${meshWorldPos.y.toFixed(2)}, ${meshWorldPos.z.toFixed(2)})`);
+        });
+      }
+    } else {
+      console.log(`❌ No meshes found for hit detection - this should not happen!`);
+    }
+    
+    // Only use fallback detection if we couldn't find any meshes at all
+    if (dinoMeshes.length === 0) {
+      console.log(`🎯 Using position-based fallback detection (no meshes found)...`);
+      const fallbackRadius = 1.2; // Reasonable radius for hit detection
+      const rayLength = rayStart.distanceTo(rayEnd);
+      const playerToRayStart = playerPos.clone().sub(rayStart);
+      const projectionLength = playerToRayStart.dot(rayDirection);
+      const clampedProjection = Math.max(0, Math.min(rayLength, projectionLength));
+      const closestPoint = rayStart.clone().add(rayDirection.clone().multiplyScalar(clampedProjection));
+      
+      const distanceToRay = playerPos.distanceTo(closestPoint);
+      console.log(`   └─ Fallback: distance to ray = ${distanceToRay.toFixed(2)}, threshold = ${fallbackRadius}`);
+      
+      if (distanceToRay <= fallbackRadius) {
+        console.log(`🎯 HIT DETECTION: FALLBACK POSITION-BASED SUCCESS from ${raycastData.username}`);
+        console.log(`   └─ Distance to ray: ${distanceToRay.toFixed(2)} (threshold: ${fallbackRadius})`);
+        console.log(`   └─ Meshes found: ${dinoMeshes.length}, Intersections: 0`);
+        
+        takeDamage(raycastData.damage || 25, `shot by ${raycastData.username}`);
+        return true;
       }
     }
     
-    // Always use fallback detection since mesh detection might be unreliable
-    console.log(`🎯 Using position-based fallback detection...`);
-    const fallbackRadius = 1.2; // Reasonable radius for hit detection
-    const rayLength = rayStart.distanceTo(rayEnd);
-    const playerToRayStart = playerPos.clone().sub(rayStart);
-    const projectionLength = playerToRayStart.dot(rayDirection);
-    const clampedProjection = Math.max(0, Math.min(rayLength, projectionLength));
-    const closestPoint = rayStart.clone().add(rayDirection.clone().multiplyScalar(clampedProjection));
-    
-    const distanceToRay = playerPos.distanceTo(closestPoint);
-    console.log(`Fallback: distance to ray = ${distanceToRay.toFixed(2)}, threshold = ${fallbackRadius}`);
-    
-    if (distanceToRay <= fallbackRadius) {
-      console.log(`💥 Player hit by raycast from ${raycastData.username} (fallback detection)! Distance: ${distanceToRay.toFixed(2)}`);
-      takeDamage(raycastData.damage || 25, `shot by ${raycastData.username}`);
-      return true;
-    }
-    
-    console.log(`🎯 Shot from ${raycastData.username} missed - distance: ${distanceToRay.toFixed(2)}`);
+    console.log(`🎯 Shot from ${raycastData.username} missed completely`);
     return false;
   }, [dinoRef, takeDamage, showEnemyRaycast]);
 

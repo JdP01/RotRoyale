@@ -22,7 +22,7 @@ export default function App() {
   }, []);
 
   const handleLogin = (sessionData) => {
-    console.log("Login successful, session data:", sessionData);
+    // console.log("Login successful, session data:", sessionData);
     setUserSession(sessionData);
     setIsLoggedIn(true);
   };
@@ -44,7 +44,7 @@ export default function App() {
   };
 
   const handleMatchFound = async (matchData) => {
-    console.log("Match found, setting up game:", matchData);
+    // console.log("Match found, setting up game:", matchData);
 
     setCurrentMatch(matchData);
 

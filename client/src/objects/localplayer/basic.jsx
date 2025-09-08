@@ -134,6 +134,14 @@ export const BasicCharacter = ({
     // Get controller logic - for local players use actual controls, for networked use simulated controls
     const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping, config.movement.maxGroundDistance) : null;
     
+    // Expose the main group ref through the body ref for hit detection
+    useEffect(() => {
+        if (bodyRef && bodyRef.current && mainGroupRef.current) {
+            // Add a reference to the main group on the physics body for hit detection
+            bodyRef.current.mainGroup = mainGroupRef.current;
+        }
+    }, [bodyRef]);
+    
     // For networked players, simulate movement states based on button states
     useEffect(() => {
         if (isNetworkedPlayer && networkButtonStates) {

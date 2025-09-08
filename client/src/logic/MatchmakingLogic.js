@@ -30,7 +30,7 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
 
     // Listen for when the server finds us a match
     socket.onmatchmakermatched = (matched) => {
-      console.log("Match found:", matched);
+      // console.log("Match found:", matched);
       
       // Stop showing "searching" since we found a match
       setIsSearching(false);
@@ -47,7 +47,7 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
         presences: matched.presences || [] // Real-time presence info
       };
       
-      console.log("Processed match data:", matchData);
+      // console.log("Processed match data:", matchData);
       
       // Tell the game that we found a match
       onMatchFound(matchData);
@@ -155,13 +155,13 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
         "character_index": characterData ? (characterData.component === 'bear' ? 1 : 0) : 0
       };
 
-      console.log("Starting matchmaking with parameters:", {
-        query: matchmakingQuery,
-        minPlayers,
-        maxPlayers,
-        stringProperties,
-        numericProperties
-      });
+      // console.log("Starting matchmaking with parameters:", {
+      //   query: matchmakingQuery,
+      //   minPlayers,
+      //   maxPlayers,
+      //   stringProperties,
+      //   numericProperties
+      // });
 
       // Actually start the matchmaking process
       const ticket = await userSession.socket.addMatchmaker(
