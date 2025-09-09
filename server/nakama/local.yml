@@ -28,10 +28,7 @@ runtime:
 
 # Add HTTP server configuration with CORS
 http_server:
-  allowed_origins:
-    - "http://localhost:5173"
-    - "http://127.0.0.1:5173"
-    - "http://localhost:3000"
+  allowed_origins: ${ALLOWED_ORIGINS}
   allowed_headers:
     - "Origin"
     - "Content-Type"
