@@ -109,24 +109,45 @@ const GameLogic = ({
     
     // Set up lobby kick callback for when player dies
     if (backToMenu) {
-      const lobbyKickHandler = (reason) => {
-        console.log("🚪 Player kicked to lobby:", reason);
-        
-        // Optional: Show a message to the user
-        alert(reason || "You have been returned to the lobby.");
-        
-        // Return to menu/lobby
-        backToMenu();
-      };
+      const currentState = usePlayerState.getState();
       
-      setLobbyKickCallback(lobbyKickHandler);
+      // Only set up callback if one doesn't already exist
+      if (!currentState.lobbyKickCallback) {
+        console.log("🚪 Setting up lobby kick callback");
+        
+        const lobbyKickHandler = (reason) => {
+          console.log("🚪 Player kicked to lobby:", reason);
+          
+          // Return to menu/lobby immediately
+          try {
+            backToMenu();
+            console.log("🚪 Successfully called backToMenu");
+          } catch (error) {
+            console.error("🚪 Error calling backToMenu:", error);
+          }
+        };
+        
+        setLobbyKickCallback(lobbyKickHandler);
+      } else {
+        console.log("🚪 Lobby kick callback already exists, skipping setup");
+      }
     }
     
     return () => {
+      // Clear callbacks
       setBroadcastCallback(null);
       setLobbyKickCallback(null);
+      
+      // Also clear any pending death timeouts from PlayerState
+      const playerState = usePlayerState.getState();
+      if (playerState.deathTimeoutId) {
+        clearTimeout(playerState.deathTimeoutId);
+        // Reset the timeout ID in the store
+        usePlayerState.setState({ deathTimeoutId: null });
+        console.log("🚪 Cleared death timeout on component unmount");
+      }
     };
-  }, [currentMatch, userSession, setBroadcastCallback, setLobbyKickCallback, backToMenu]);
+  }, [currentMatch, userSession, backToMenu]);
 
   // Handle hit detection for incoming raycast shots
   const handleRaycastHit = useCallback((raycastData) => {

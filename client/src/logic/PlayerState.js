@@ -12,6 +12,9 @@ export const usePlayerState = create((set, get) => ({
   isDead: false,
   isExhausted: false,
   
+  // Timeout tracking
+  deathTimeoutId: null,
+  
   // Raycast visualization state
   raycastVisible: false,
   raycastStart: null,
@@ -31,11 +34,20 @@ export const usePlayerState = create((set, get) => ({
   lobbyKickCallback: null,
   
   // Actions
-  takeDamage: (amount, source = 'unknown') => {
-    const currentHealth = get().health;
-    const newHealth = Math.max(0, currentHealth - amount);
+  takeDamage: (amount) => {
+    const { health, isDead, deathTimeoutId } = get();
     
-    set({ 
+    // Don't take damage if already dead
+    if (isDead) {
+      console.log("💀 Player already dead, ignoring damage");
+      return;
+    }
+
+    const newHealth = Math.max(0, health - amount);
+    
+    console.log(`💥 Took ${amount} damage. Health: ${health} → ${newHealth}`);
+    
+    set({
       health: newHealth,
       isDead: newHealth <= 0
     });
@@ -43,6 +55,11 @@ export const usePlayerState = create((set, get) => ({
     // If player died, trigger lobby kick after a short delay
     if (newHealth <= 0) {
       console.log("💀 Player died! Kicking back to lobby in 3 seconds...");
+      
+      // Clear any existing death timeout
+      if (deathTimeoutId) {
+        clearTimeout(deathTimeoutId);
+      }
       
       // Broadcast death to other players first
       const { broadcastCallback } = get();
@@ -55,13 +72,19 @@ export const usePlayerState = create((set, get) => ({
       }
       
       // Kick to lobby after a short delay to show death screen
-      setTimeout(() => {
-        const { lobbyKickCallback } = get();
-        if (lobbyKickCallback) {
+      const newTimeoutId = setTimeout(() => {
+        const currentState = get();
+        // Only kick to lobby if player is still dead and callback still exists
+        if (currentState.isDead && currentState.lobbyKickCallback) {
           console.log("🚪 Executing lobby kick callback");
-          lobbyKickCallback("You died and have been returned to the lobby.");
+          currentState.lobbyKickCallback("You died and have been returned to the lobby.");
+        } else {
+          console.log("🚪 Skipping lobby kick - player no longer dead or callback cleared");
         }
       }, 3000); // 3 second delay to show death screen
+      
+      // Store the timeout ID so we can clear it later
+      set({ deathTimeoutId: newTimeoutId });
     }
     
     // Trigger damage overlay effect
@@ -134,12 +157,21 @@ export const usePlayerState = create((set, get) => ({
   
   // Reset player state (on respawn)
   reset: () => {
-    console.log("🔄 Player state reset - respawning");
+    const { deathTimeoutId } = get();
+    
+    // Clear any pending death timeout
+    if (deathTimeoutId) {
+      clearTimeout(deathTimeoutId);
+      console.log("� Cleared pending death timeout");
+    }
+    
+    console.log("�🔄 Player state reset - returning to lobby");
     set({
       health: 100,
       stamina: 100,
       isDead: false,
       isExhausted: false,
+      deathTimeoutId: null,
       raycastVisible: false,
       raycastStart: null,
       raycastEnd: null,
@@ -148,6 +180,8 @@ export const usePlayerState = create((set, get) => ({
       enemyRaycastEnd: null,
       damageOverlayVisible: false,
       damageOverlayIntensity: 0
+      // Note: NOT clearing lobbyKickCallback and broadcastCallback here
+      // They should only be cleared when component unmounts to prevent loops
     });
   },
   

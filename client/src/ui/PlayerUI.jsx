@@ -1,5 +1,5 @@
 // Player UI Component for Health and Stamina Display
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePlayerState } from '../logic/PlayerState';
 import '../styling/PlayerUI.css';
 
@@ -24,6 +24,31 @@ const Crosshair = ({ isAiming = false }) => {
       <div className="crosshair-line crosshair-bottom"></div>
       <div className="crosshair-line crosshair-left"></div>
       <div className="crosshair-line crosshair-right"></div>
+    </div>
+  );
+};
+
+// Death countdown timer component
+const DeathCountdown = () => {
+  const [countdown, setCountdown] = useState(3); // 3 seconds to match the timeout
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <div className="death-timer">
+      <p>Returning to lobby in {countdown} seconds...</p>
     </div>
   );
 };
@@ -89,10 +114,8 @@ export const PlayerUI = ({ isAiming = false }) => {
           <div className="death-overlay">
             <div className="death-content">
               <h2>💀 You Died!</h2>
-              <p>Returning to lobby in a few seconds...</p>
-              <div className="death-timer">
-                <p>⏱️ Game Over</p>
-              </div>
+              <p>You were eliminated from the match.</p>
+              <DeathCountdown />
             </div>
           </div>
         )}

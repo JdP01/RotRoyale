@@ -116,7 +116,7 @@ export default function App() {
     setGameState('matchmaking');
   };
 
-  const backToMenu = () => {
+  const backToMenu = useCallback(() => {
     if (currentMatch && userSession?.socket) {
       try {
         userSession.socket.leaveMatch(currentMatch.match_id);
@@ -131,7 +131,7 @@ export default function App() {
     setCurrentMatch(null);
     setConnectedPlayers([]);
     setOtherPlayersData({});
-  };
+  }, [currentMatch, userSession, resetPlayerState]);
 
   // If not logged in, show the LoginPage
   if (!isLoggedIn) {
