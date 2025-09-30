@@ -65,8 +65,8 @@
       "speed": 1.0,
       "sprintMultiplier": 1.5,
       "maxGroundDistance": 0.000000001,
-      "fallDamageThreshold": 20,
-      "fallDamageMultiplier": 0.5,
+      "fallDamageThreshold": 30,
+      "fallDamageMultiplier": 0.1,
       "lerpFactor": 0.2
     },
     "animations": {
@@ -168,8 +168,8 @@
       "speed": 1.0,
       "sprintMultiplier": 1.5,
       "maxGroundDistance": 0.1,
-      "fallDamageThreshold": 20,
-      "fallDamageMultiplier": 0.2,
+      "fallDamageThreshold": 30,
+      "fallDamageMultiplier": 0.1,
       "lerpFactor": 0.2
     },
     "animations": {

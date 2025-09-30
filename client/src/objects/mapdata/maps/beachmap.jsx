@@ -4,6 +4,12 @@ import { RigidBody, CuboidCollider, CylinderCollider, BallCollider, CapsuleColli
 import * as THREE from 'three';
 import mapData from '../instructions/beachmap.json';
 
+// Preload all models outside component to ensure they're ready before render
+useGLTF.preload('/objects/cactus.glb');
+useGLTF.preload('/objects/palmTree.glb');
+useGLTF.preload('/objects/game_tree.glb');
+useGLTF.preload(mapData.mapFile);
+
 const InstancedProps = ({ propType, instances }) => {
   const instancedMeshRef = useRef();
   
@@ -31,16 +37,27 @@ const InstancedProps = ({ propType, instances }) => {
   useEffect(() => {
     if (!instancedMeshRef.current || !geometry || !material) return;
 
+    const mesh = instancedMeshRef.current;
     const tempMatrix = new THREE.Matrix4();
+    
     instances.forEach((instance, index) => {
       tempMatrix.compose(
         new THREE.Vector3(...instance.position),
         new THREE.Quaternion().setFromEuler(new THREE.Euler(...instance.rotation)),
         new THREE.Vector3(...instance.scale)
       );
-      instancedMeshRef.current.setMatrixAt(index, tempMatrix);
+      mesh.setMatrixAt(index, tempMatrix);
     });
-    instancedMeshRef.current.instanceMatrix.needsUpdate = true;
+    
+    mesh.instanceMatrix.needsUpdate = true;
+    
+    // CRITICAL FIX: Compute bounding sphere to prevent frustum culling issues
+    mesh.computeBoundingSphere();
+    
+    // OPTIONAL: Disable frustum culling entirely if instances cover large area
+    // This prevents disappearing instances when camera moves fast
+    mesh.frustumCulled = false;
+    
   }, [instances, geometry, material]);
 
   if (!geometry || !material || instances.length === 0) return null;
@@ -51,6 +68,7 @@ const InstancedProps = ({ propType, instances }) => {
       args={[geometry, material, instances.length]}
       castShadow
       receiveShadow
+      frustumCulled={false} // Prevent culling issues with spread-out instances
     />
   );
 };
@@ -74,7 +92,7 @@ const InstancedPropsWithPhysics = ({ propType, instances }) => {
       },
       { 
         type: 'capsule', 
-        position: [-0.03, 0.3,1], 
+        position: [-0.03, 0.3, 1], 
         args: [0.3, 0.3], // height, radius
         rotation: [0, Math.PI / 2, Math.PI / 2] // horizontal
       }
@@ -90,7 +108,7 @@ const InstancedPropsWithPhysics = ({ propType, instances }) => {
       {
         type: 'cuboid',
         position: [-1.8, -2, -0.6], 
-        args: [1.4,6,1.4]
+        args: [1.4, 6, 1.4]
       },
       { 
         type: 'ball', 
@@ -174,7 +192,7 @@ const BeachMap = () => {
     { pos: [-58, 0, 0], args: [1, 100, 115] },
     { pos: [0, 0, 58], args: [115, 100, 1] },
     { pos: [0, 0, -58], args: [115, 100, 1] },
-    { pos: [0, 50.5,0], args: [115, 1, 115] }
+    { pos: [0, 50.5, 0], args: [115, 1, 115] }
   ];
 
   return (
