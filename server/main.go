@@ -4,7 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+    
 	"github.com/heroiclabs/nakama-common/runtime"
+
+	// Local modules
+	"rotbackend/basicmatch"
+	mm "rotbackend/matchmaking"
 )
 
 func getAssetsRpc(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
@@ -88,6 +93,33 @@ func addCoinsRpc(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runt
 	return "{\"success\": true}", nil
 }
 
+// getPlayersConnectedRpc expects payload {"match_id":"<id>"} and returns {"players":N}.
+func getPlayersConnectedRpc(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	// Ensure user is authenticated (optional but recommended)
+	if _, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string); !ok {
+		return "", runtime.NewError("user not authenticated", 3)
+	}
+
+	var req struct {
+		MatchID string `json:"match_id"`
+	}
+	if payload != "" {
+		if err := json.Unmarshal([]byte(payload), &req); err != nil {
+			return "", runtime.NewError("invalid payload", 3)
+		}
+	}
+	if req.MatchID == "" {
+		return "", runtime.NewError("match_id required", 3)
+	}
+
+	// Use MatchSignal to query the match instance for live info.
+	if resp, err := nk.MatchSignal(ctx, req.MatchID, "get_players_connected"); err == nil {
+		return resp, nil
+	}
+	logger.Error("MatchSignal failed for %s", req.MatchID)
+	return "", runtime.NewError("failed to query match", 13)
+}
+
 func addSkinRpc(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
 	userID, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
 	if !ok {
@@ -149,6 +181,7 @@ func addSkinRpc(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 }
 
 func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, initializer runtime.Initializer) error {
+	// Register RPCs
 	err := initializer.RegisterRpc("get_assets", getAssetsRpc)
 	if err != nil {
 		logger.Error("Unable to register get_assets RPC: %v", err)
@@ -164,6 +197,26 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	err = initializer.RegisterRpc("add_skin", addSkinRpc)
 	if err != nil {
 		logger.Error("Unable to register add_skin RPC: %v", err)
+		return err
+	}
+
+	// Register RPC to get accurate player count from a match.
+	if err := initializer.RegisterRpc("get_players_connected", getPlayersConnectedRpc); err != nil {
+		logger.Error("Unable to register get_players_connected RPC: %v", err)
+		return err
+	}
+
+	// Register authoritative match handler used by matchmaker.
+	if err := initializer.RegisterMatch("basicmatch", func(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule) (runtime.Match, error) {
+		return basicmatch.New(), nil
+	}); err != nil {
+		logger.Error("Unable to register basicmatch: %v", err)
+		return err
+	}
+
+	// Register matchmaker matched hook to create our match.
+	if err := mm.Register(initializer); err != nil {
+		logger.Error("Unable to register matchmaker matched hook: %v", err)
 		return err
 	}
 

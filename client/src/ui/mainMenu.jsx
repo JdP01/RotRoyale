@@ -427,16 +427,41 @@ export function GameInfoOverlay({
   connectedPlayers, 
   otherPlayersData, 
   userSession,
-  onRespawn,
   onBackToMenu 
 }) {
+  const [livePlayerCount, setLivePlayerCount] = useState(null);
+
+  // Poll accurate player count from backend via RPC. Fallback to connectedPlayers.length
+  useEffect(() => {
+    if (!userSession?.client || !userSession?.session || !currentMatch?.match_id) {
+      setLivePlayerCount(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchCount = async () => {
+      try {
+        const payload = JSON.stringify({ match_id: currentMatch.match_id });
+        const resp = await userSession.client.rpc(userSession.session, "get_players_connected", payload);
+        const data = typeof resp.payload === 'string' ? JSON.parse(resp.payload) : resp.payload;
+        if (!cancelled && typeof data?.players === 'number') {
+          setLivePlayerCount(data.players);
+        }
+      } catch (e) {
+        if (!cancelled) setLivePlayerCount(null);
+      }
+    };
+    fetchCount();
+    const t = setInterval(fetchCount, 3000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [userSession?.client, userSession?.session, currentMatch?.match_id]);
+
   return (
     <div className="game-info-overlay">
       <p><strong>Game Mode:</strong> {currentMatch ? 'Multiplayer' : 'Single Player'}</p>
       {currentMatch && (
         <>
           <p><strong>Match ID:</strong> {currentMatch.match_id?.substring(0, 8)}...</p>
-          <p><strong>Players Connected:</strong> {connectedPlayers.length}</p>
+          <p><strong>Players Connected:</strong> {livePlayerCount ?? (1 + Object.keys(otherPlayersData).length)}</p>
           <p>
             <strong>Other Players Visible:</strong> 
             <span style={{ color: Object.keys(otherPlayersData).length > 0 ? '#4CAF50' : '#f44336' }}>
@@ -465,9 +490,6 @@ export function GameInfoOverlay({
       )}
 
       <div className="button-group">
-        <button onClick={onRespawn} className="info-respawn-button">
-          Respawn
-        </button>
         <button onClick={onBackToMenu} className="info-back-button">
           Back to Menu
         </button>

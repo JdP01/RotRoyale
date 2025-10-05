@@ -471,6 +471,8 @@ export default function GameCanvas({
   const [cameraPitch, setCameraPitch] = useState(0);
   const [isAiming, setIsAiming] = useState(false);
   const dinoRef = useRef(null);
+  const hasKickedRef = useRef(false);
+  const [livePlayerCount, setLivePlayerCount] = useState(null);
   
   // Memoize the aiming callback to prevent unnecessary re-renders
   const handleAimingChange = useCallback((aimingState) => {
@@ -493,6 +495,7 @@ export default function GameCanvas({
   useEffect(() => {
     console.log("🎮 GameCanvas mounted - resetting player state for new game");
     resetPlayerState();
+    hasKickedRef.current = false;
   }, []); // Empty dependency array means this runs once when component mounts
 
   // Enhanced socket event handling
@@ -503,8 +506,104 @@ export default function GameCanvas({
 
     //Listener for real-time data updates for other players
     socket.onmatchdata = (matchData) => {
-      console.log("Received raw match data:", matchData);
-      console.log("Data type:", matchData.data?.constructor?.name);
+      console.log("🔍 Received raw match data:", matchData);
+      console.log("🔍 Data type:", matchData.data?.constructor?.name);
+
+      // Handle authoritative server snapshot opcode (be defensive about property name).
+      const opCode = (typeof matchData.opCode === 'number') ? matchData.opCode
+        : (typeof matchData.opcode === 'number') ? matchData.opcode
+        : (typeof matchData.op_code === 'number') ? matchData.op_code
+        : null;
+
+      console.log("🔍 Detected opCode:", opCode);
+
+      if (opCode === 150) { // OpServerSnapshot
+        console.log("🎯 Processing server snapshot (opcode 150)");
+        try {
+          let decoded;
+          if (matchData.data instanceof Uint8Array) {
+            decoded = new TextDecoder().decode(matchData.data);
+            console.log("🔍 Decoded from Uint8Array:", decoded);
+          } else if (typeof matchData.data === 'string') {
+            decoded = matchData.data;
+            console.log("🔍 Data is already string:", decoded);
+          } else if (matchData.data && typeof matchData.data === 'object') {
+            console.log("🔍 Data is already object/array:", matchData.data);
+            // Already an object/array
+            const me = Array.isArray(matchData.data) ? matchData.data.find(p => p.u === userSession?.account?.user?.id) : null;
+            console.log("🔍 Found my player in snapshot:", me);
+            console.log("🔍 My user ID:", userSession?.account?.user?.id);
+            
+            if (me) {
+              console.log("🔍 Server says my alive status:", me.a, "health:", me.hp);
+              
+              if (hasKickedRef.current === false && me.a === false) {
+                console.log("💀 Server confirms I'm dead; kicking to lobby.");
+                hasKickedRef.current = true;
+                try { backToMenu(); } catch (e) { console.error(e); }
+              } else if (me.a === true) {
+                console.log("✅ Server confirms I'm alive - resetting local state if needed");
+                // Server approved respawn or player is alive - reset UI if dead locally
+                const currentState = usePlayerState.getState();
+                if (currentState.isDead || currentState.health <= 0) {
+                  console.log("🔄 Resetting player state based on server confirmation");
+                  resetPlayerState();
+                  // Reset physics position to match server
+                  if (dinoRef.current && me.x !== undefined && me.y !== undefined) {
+                    const serverPos = { x: me.x, y: me.y, z: me.z || 0 };
+                    dinoRef.current.setTranslation(serverPos, true);
+                    dinoRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+                    dinoRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                    setDinoRotation(0);
+                    setCameraPitch(0);
+                    dinoRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+                    console.log("✅ Player state reset to server position:", serverPos);
+                  }
+                }
+              }
+            }
+            return;
+          }
+
+          const snapshot = JSON.parse(decoded || '[]'); // [{u,x,y,z?,hp,a}]
+          console.log("🔍 Parsed snapshot:", snapshot);
+          const me = Array.isArray(snapshot) ? snapshot.find(p => p.u === userSession?.account?.user?.id) : null;
+          console.log("🔍 Found my player in snapshot:", me);
+          console.log("🔍 My user ID:", userSession?.account?.user?.id);
+          
+          if (me) {
+            console.log("🔍 Server says my alive status:", me.a, "health:", me.hp);
+            
+            if (hasKickedRef.current === false && me.a === false) {
+              console.log("💀 Server confirms I'm dead; kicking to lobby.");
+              hasKickedRef.current = true;
+              try { backToMenu(); } catch (e) { console.error(e); }
+            } else if (me.a === true) {
+              console.log("✅ Server confirms I'm alive - resetting local state if needed");
+              // Server approved respawn or player is alive - reset UI if dead locally
+              const currentState = usePlayerState.getState();
+              if (currentState.isDead || currentState.health <= 0) {
+                console.log("🔄 Resetting player state based on server confirmation");
+                resetPlayerState();
+                // Reset physics position to match server
+                if (dinoRef.current && me.x !== undefined && me.y !== undefined) {
+                  const serverPos = { x: me.x, y: me.y, z: me.z || 0 };
+                  dinoRef.current.setTranslation(serverPos, true);
+                  dinoRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+                  dinoRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                  setDinoRotation(0);
+                  setCameraPitch(0);
+                  dinoRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+                  console.log("✅ Player state reset to server position:", serverPos);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error("❌ Error handling server snapshot:", e);
+        }
+        return; // Do not process further as generic game update
+      }
 
       try {
         let gameUpdate;
@@ -635,6 +734,32 @@ export default function GameCanvas({
     };
   }, [userSession]);
 
+  // Poll accurate player count from backend via RPC. Falls back to connectedPlayers.length.
+  useEffect(() => {
+    if (!userSession?.client || !userSession?.session || !currentMatch?.match_id) {
+      setLivePlayerCount(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchCount = async () => {
+      try {
+        const payload = JSON.stringify({ match_id: currentMatch.match_id });
+        const resp = await userSession.client.rpc(userSession.session, "get_players_connected", payload);
+        const data = typeof resp.payload === 'string' ? JSON.parse(resp.payload) : resp.payload;
+        if (!cancelled && typeof data?.players === 'number') {
+          setLivePlayerCount(data.players);
+        }
+      } catch (e) {
+        console.warn("get_players_connected RPC failed; using local count", e);
+        if (!cancelled) setLivePlayerCount(null);
+      }
+    };
+    // Fetch immediately and then every 3s.
+    fetchCount();
+    const t = setInterval(fetchCount, 3000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [userSession?.client, userSession?.session, currentMatch?.match_id]);
+
   const map = useMemo(() => [ //map for KeyboardControls
     { name: Controls.forward, keys: ["KeyW"] },
     { name: Controls.back, keys: ["KeyS"] },
@@ -644,27 +769,6 @@ export default function GameCanvas({
     { name: Controls.sprint, keys: ["Shift"] },
     
   ], []);
-
-  const handleRespawn = () => {
-    if (dinoRef.current) {
-      // Reset position to origin (0, 0, 0) or whatever your spawn point is
-      const spawnPosition = { x: 0, y: 5, z: 0 }; // Adjust Y value based on your ground level
-      // Set the position using Rapier physics body
-      dinoRef.current.setTranslation(spawnPosition, true);
-      // Reset velocity to stop any momentum
-      dinoRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      dinoRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      // Reset rotation
-      setDinoRotation(0);
-      setCameraPitch(0);
-      dinoRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
-      
-      // Reset player health and stamina
-      resetPlayerState();
-      
-      console.log("Player respawned at:", spawnPosition);
-    }
-  };
 
   return (
     <div className="game-container">
@@ -677,7 +781,7 @@ export default function GameCanvas({
         {currentMatch && (
           <>
             <p><strong>Match ID:</strong> {currentMatch.match_id?.substring(0, 8)}...</p>
-            <p><strong>Players Connected:</strong> {connectedPlayers.length}</p>
+            <p><strong>Players Connected:</strong> {livePlayerCount ?? (1 + Object.keys(otherPlayersData).length)}</p>
             <p><strong>Other Players Visible:</strong> <span style={{ color: Object.keys(otherPlayersData).length > 0 ? '#4CAF50' : '#f44336' }}>{Object.keys(otherPlayersData).length}</span></p>
             <p><strong>My Player ID:</strong> {userSession?.account?.user?.id?.substring(0, 8)}...</p>
 
@@ -699,12 +803,6 @@ export default function GameCanvas({
         )}
 
         <div className="button-group">
-          <button
-            onClick={handleRespawn}
-            className="info-respawn-button"
-          >
-            Respawn
-          </button>
           <button
             onClick={backToMenu}
             className="info-back-button"

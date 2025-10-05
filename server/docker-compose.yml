@@ -31,7 +31,3 @@ services:
 
 volumes:
   pgdata:
-
-#TODO
-#Remember that the current hardcoded passwords and exposed database port in the Docker configuration are only for local development. 
-#For production, these secrets must be managed securely with a dedicated system, and the database should be on a private network.
