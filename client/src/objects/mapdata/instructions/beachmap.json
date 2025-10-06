@@ -1,6 +1,6 @@
 {
   "mapName": "Beach Map",
-  "mapFile": "/objects/Map1.glb",
+  "mapFile": "/objects/map2.glb",
   "mapScale": [4.5, 4.5, 4.5],
   "mapPosition": [0, 40, 0],
   "instances": [
@@ -179,5 +179,22 @@
       "rotation": [0, 3, 0],
       "scale": [3,3,3]
     }
+  ],
+  "water": {
+    "position": [0, -2, 0],
+    "rotation": [-1.5708, 0, 0],
+    "args": [1000, 1000],
+    "color": "#0074ad",
+    "opacity": 0.8,
+    "metalness": 0.1,
+    "roughness": 1,
+    "envMapIntensity": 0.8
+  },
+  "walls": [
+    { "position": [58, 0, 0], "args": [1, 100, 115] },
+    { "position": [-58, 0, 0], "args": [1, 100, 115] },
+    { "position": [0, 0, 58], "args": [115, 100, 1] },
+    { "position": [0, 0, -58], "args": [115, 100, 1] },
+    { "position": [0, 50.5, 0], "args": [115, 1, 115] }
   ]
 }

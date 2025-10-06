@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 
 /**
@@ -7,10 +8,51 @@ export class MapLoader {
   static loadMapData(mapName) {
     switch (mapName) {
       case 'beach':
-        return import('../instructions/beachmap.json').then(module => module.default);
+        return import('../instructions/maptest.json').then(module => module.default);
       default:
         throw new Error(`Map '${mapName}' not found`);
     }
+  }
+
+  static async getMapComponent(mapName) {
+    switch (mapName) {
+      case 'beach':
+        const { default: BeachMap } = await import('./maps/colliderInstancing');
+        return BeachMap;
+      default:
+        throw new Error(`Map component '${mapName}' not found`);
+    }
+  }
+
+  // Generic map loader that can create a map component from any JSON file
+  static createMapFromJSON(jsonPath) {
+    return ({ customMapData }) => {
+      const [mapData, setMapData] = useState(customMapData || null);
+      const [loading, setLoading] = useState(!customMapData);
+
+      useEffect(() => {
+        if (customMapData) return;
+
+        const loadMapData = async () => {
+          try {
+            const data = await import(jsonPath);
+            setMapData(data.default);
+          } catch (error) {
+            console.error(`Failed to load map data from ${jsonPath}:`, error);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        loadMapData();
+      }, [customMapData]);
+
+      if (loading) return null;
+      if (!mapData) return React.createElement('div', null, 'Failed to load map data');
+
+      const { MapRenderer } = require('./maps/colliderInstancing');
+      return React.createElement(MapRenderer, { mapData });
+    };
   }
 
   static getAssetData(path) {
@@ -33,40 +75,24 @@ export class MapLoader {
   }
 
   static preloadAssets(mapData) {
+    // Import the object paths and preload function from colliderInstancing
+    const { preloadAllObjects } = require('./maps/colliderInstancing');
+    
     // Preload the main map
     useGLTF.preload(mapData.mapFile);
     
-    // Get unique asset types from instances
-    const assetTypes = new Set(mapData.instances.map(instance => instance.type));
-    
-    // Preload each asset type
-    assetTypes.forEach(type => {
-      switch (type) {
-        case 'cactus':
-          useGLTF.preload('/objects/cactus.glb');
-          break;
-        case 'palmtree':
-          useGLTF.preload('/objects/palmTree.glb');
-          break;
-        case 'tree':
-          useGLTF.preload('/objects/game_tree.glb');
-          break;
-        default:
-          console.warn(`Unknown asset type for preloading: ${type}`);
-      }
-    });
+    // Preload all available objects
+    preloadAllObjects();
   }
 
   static getAssetPath(type) {
-    switch (type) {
-      case 'cactus':
-        return '/objects/cactus.glb';
-      case 'palmtree':
-        return '/objects/palmTree.glb';
-      case 'tree':
-        return '/objects/game_tree.glb';
-      default:
-        throw new Error(`Unknown asset type: ${type}`);
+    // Import the object path getter from colliderInstancing
+    const { getObjectPath } = require('./maps/colliderInstancing');
+    
+    const path = getObjectPath(type);
+    if (!path) {
+      throw new Error(`Unknown asset type: ${type}`);
     }
+    return path;
   }
 }

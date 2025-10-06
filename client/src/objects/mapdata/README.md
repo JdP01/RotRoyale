@@ -1,132 +1,75 @@
-# 3D Map System with Instanced Meshing
+# Map Data
 
-This document describes the 3D map system that uses instanced meshing for optimized rendering of props and objects.
-
-## System Overview
-
-The map system is designed to efficiently render multiple instances of the same 3D models (props) using THREE.js InstancedMesh for optimal performance. Each prop type is defined once and then instantiated multiple times with different positions, rotations, and scales.
-
-## Directory Structure
-
-```
-src/objects/mapdata/
-├── maps/
-│   └── beachmap.jsx         # Main beach map implementation
-├── props/
-│   ├── cactus_1.js          # Cactus prop definition
-│   ├── palmtree_1.js        # Palm tree prop definition
-│   └── tree_1.js            # Tree prop definition
-├── instructions/
-│   └── beachmap.json        # Map layout data
-└── maploader.js             # Utility functions for loading assets
-```
-
-## Prop Definition Files
-
-Each prop file (e.g., `cactus_1.js`) exports functions to get geometry and materials from GLTF models:
-
-```javascript
-import { useGLTF } from '@react-three/drei';
-
-export const getCactusGeometry = () => { /* ... */ };
-export const getCactusMaterial = () => { /* ... */ };
-```
-
-### Available Props
-- **Cactus**: `/objects/cactus.glb`
-- **Palm Tree**: `/objects/palmTree.glb`
-- **Tree**: `/objects/game_tree.glb`
-
-## Map Layout File
-
-The `beachmap.json` file defines:
-- Map metadata (name, file, scale)
-- Array of instance definitions with:
-  - `id`: Unique identifier
-  - `type`: Prop type (cactus, palmtree, tree)
-  - `position`: [x, y, z] coordinates
-  - `rotation`: [x, y, z] Euler angles
-  - `scale`: [x, y, z] scale factors
-
-### Example Instance Definition
-```json
-{
-  "id": "cactus_001",
-  "type": "cactus",
-  "position": [-20, -40.1, -40],
-  "rotation": [0, 1.047, 0],
-  "scale": [0.3, 0.3, 0.3]
-}
-```
-
-## Performance Features
-
-### Instanced Rendering
-- Props of the same type are batched into a single `InstancedMesh`
-- Dramatically reduces draw calls
-- Supports hundreds of instances with minimal performance impact
-
-### Physics Optimization
-- Each instance has its own physics body for collision detection
-- Invisible collision meshes for physics
-- Visible instanced meshes for rendering
-
-### Asset Preloading
-- All GLTF models are preloaded for smooth performance
-- Geometry and materials are cloned to avoid conflicts
+This directory contains map data and loaders for the game.
 
 ## Usage
 
-### In GameEnvironment.jsx
-```javascript
-import BeachMap from '../mapdata/maps/beachmap.js';
-
-const GameEnvironment = () => {
-  return (
-    <>
-      {/* Lighting setup */}
-      <BeachMap />
-    </>
-  );
-};
+### Loading a specific map:
+```jsx
+import BeachMap from './maps/colliderInstancing';
+// Use BeachMap component directly - it loads beachmap.json automatically
 ```
 
-### Adding New Props
-1. Create a new prop definition file in `props/`
-2. Add the model file to `public/objects/`
-3. Update `MapLoader.getAssetPath()` to include the new type
-4. Add instances to the JSON layout file
+### Using the generic map renderer:
+```jsx
+import { MapLoader } from './maploader';
+import { MapRenderer } from './maps/colliderInstancing';
 
-### Adding New Maps
-1. Create a new JSON layout file in `instructions/`
-2. Create a new map implementation in `maps/`
-3. Import and use the map in `GameEnvironment.jsx`
+// Create a map component from any JSON file
+const MyCustomMap = MapLoader.createMapFromJSON('../instructions/mymap.json');
 
-## Current Statistics
+// Or load map data and pass it to MapRenderer directly
+const mapData = await MapLoader.loadMapData('beach');
+<MapRenderer mapData={mapData} />
+```
 
-- **Total Instances**: 23 objects
-  - 8 Cacti (instanced as 1 mesh)
-  - 6 Palm Trees (instanced as 1 mesh)
-  - 8 Trees (instanced as 1 mesh)
-- **Draw Calls**: Reduced from 23 to 3 (plus main map)
-- **Physics Bodies**: 23 individual collision bodies
+### Available Object Types:
+The system now supports all objects in `/public/objects/`:
+- `barn1`, `bush1`, `bush2`, `cactus`, `castle`
+- `flag1`, `flag_stand`, `game_glock`, `game_tree`, `tree` (alias)
+- `map2`, `palmtree`, `palmTree`, `tree1`
 
-## Benefits
+### JSON Structure:
+Maps should follow this structure in their JSON files:
+```json
+{
+  "mapName": "Map Name",
+  "mapFile": "/objects/map.glb",
+  "mapScale": [1, 1, 1],
+  "mapPosition": [0, 0, 0],
+  "instances": [
+    {
+      "id": "unique_id",
+      "type": "cactus", // Any type from available objects
+      "position": [x, y, z],
+      "rotation": [rx, ry, rz],
+      "scale": [sx, sy, sz]
+    }
+  ],
+  "water": {
+    "position": [0, -2, 0],
+    "rotation": [-1.5708, 0, 0],
+    "args": [1000, 1000],
+    "color": "#0074ad",
+    "opacity": 0.8,
+    "metalness": 0.1,
+    "roughness": 1,
+    "envMapIntensity": 0.8
+  },
+  "walls": [
+    { "position": [58, 0, 0], "args": [1, 100, 115] }
+  ]
+}
+```
 
-1. **Performance**: Significantly reduced draw calls
-2. **Memory Efficiency**: Shared geometry and materials
-3. **Scalability**: Easy to add hundreds of instances
-4. **Maintainability**: Clean separation of data and logic
-5. **Flexibility**: Easy to modify positions, rotations, and scales
-6. **Physics Integration**: Full collision detection for each instance
+### Adding New Objects:
+1. Add your `.glb` file to `/public/objects/`
+2. Update `OBJECT_PATHS` in `colliderInstancing.jsx`
+3. Add collider configuration in `colliders.js`
+4. Use the object type in your JSON files
 
-## Technical Details
-
-### Instance Matrix Updates
-Each instance's transformation is stored as a 4x4 matrix in the InstancedMesh, allowing the GPU to handle positioning, rotation, and scaling efficiently.
-
-### Shadow Support
-All instanced meshes support both casting and receiving shadows for realistic lighting.
-
-### Material Cloning
-Materials are cloned to prevent shared state issues between different prop types.
+## File Structure:
+- `maploader.js` - Utility functions for loading maps and assets
+- `maps/colliderInstancing.jsx` - Contains both MapRenderer (generic) and BeachMap (specific) components
+- `maps/colliders.js` - Collider configuration for different object types
+- `instructions/` - JSON files containing map data
