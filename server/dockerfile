@@ -1,19 +1,18 @@
-# Build the Go plugin with the official plugin builder (ensures ABI/toolchain match)
+# Build the Go plugin with the official plugin builder so the ABI matches Nakama.
 FROM heroiclabs/nakama-pluginbuilder:3.27.1 AS build
 WORKDIR /backend
+
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
-RUN go mod tidy
-# Produce a single plugin .so containing your module
 RUN go build -trimpath -buildmode=plugin -o backend.so .
 
-# Final Nakama image with your plugin + config
 FROM heroiclabs/nakama:3.27.1
-# Copy Nakama config (your local.yml) into image as template
+
 COPY ./nakama/local.yml /nakama/data/local.yml.template
-# Copy the plugin into Nakama's modules dir
 COPY --from=build /backend/backend.so /nakama/data/modules/backend.so
-# Entrypoint: substitute env vars using sed, migrate DB, run Nakama, and load modules from /nakama/data/modules
-ENTRYPOINT ["/bin/sh","-ecx","sed 's/\\${CONSOLE_USERNAME}/'\"$CONSOLE_USERNAME\"'/g; s/\\${CONSOLE_PASSWORD}/'\"$CONSOLE_PASSWORD\"'/g' /nakama/data/local.yml.template > /nakama/data/local.yml && \
-   /nakama/nakama migrate up --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable && \
-   exec /nakama/nakama --config /nakama/data/local.yml --runtime.path /nakama/data/modules \
-   --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable" ]
+
+EXPOSE 7350 7351 7352
+
+ENTRYPOINT ["/bin/sh", "-ec", "sed 's|${CONSOLE_USERNAME}|'\"$CONSOLE_USERNAME\"'|g; s|${CONSOLE_PASSWORD}|'\"$CONSOLE_PASSWORD\"'|g' /nakama/data/local.yml.template > /nakama/data/local.yml && exec /nakama/nakama migrate up --database.address postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable && exec /nakama/nakama --config /nakama/data/local.yml --runtime.path /nakama/data/modules --database.address postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable"]

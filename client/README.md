@@ -1,12 +1,45 @@
-# React + Vite
+# Rot Royale Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This client supports two modes:
 
-Currently, two official plugins are available:
+- `full game mode`: login + matchmaking + multiplayer backend integration.
+- `portfolio showcase mode`: backend-free single-player 3D demo for embedding in a portfolio tab.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Portfolio showcase mode
 
-## Expanding the ESLint configuration
+Showcase mode skips login and matchmaking and opens a lightweight intro page with character selection and a button to launch the 3D demo.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Enable with environment variable
+
+Create `.env` (or `.env.production`) in `client/`:
+
+```bash
+VITE_PORTFOLIO_MODE=true
+```
+
+Then run/build as normal.
+
+### Enable with URL parameter
+
+You can also keep normal mode as default and open showcase mode only on demand:
+
+```text
+https://your-domain.example/rot-royale?showcase=1
+```
+
+## Embedding inside a portfolio tab
+
+Recommended approach:
+
+1. Deploy this client as a standalone app route (for example `/rot-royale`).
+2. In your portfolio site, add a tab that loads that route in an `iframe` or links to it in the same SPA route shell.
+3. Run Rot Royale in showcase mode (`VITE_PORTFOLIO_MODE=true` or `?showcase=1`) to avoid backend dependencies.
+
+This keeps your portfolio app lean while still presenting the full 3D interaction stack.
+
+## Controls
+
+- `WASD`: move
+- `Shift`: sprint
+- `Space`: jump
+- `Mouse`: look/aim

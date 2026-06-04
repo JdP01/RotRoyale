@@ -5,7 +5,7 @@ logger:
 
 database:
   connection: "postgres" 
-  dsn: "postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable"
+  dsn: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
 
 console:
   username: ${CONSOLE_USERNAME}
@@ -28,7 +28,8 @@ runtime:
 
 # Add HTTP server configuration with CORS
 http_server:
-  allowed_origins: ${ALLOWED_ORIGINS}
+  allowed_origins:
+    - ${ALLOWED_ORIGINS}
   allowed_headers:
     - "Origin"
     - "Content-Type"
