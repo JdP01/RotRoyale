@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:13
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nakama
+      POSTGRES_USER: nakama
+      POSTGRES_PASSWORD: localdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nakama -d nakama"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - private
+
+  rot-royale:
+    env_file:
+      - ./server/.env
+    build:
+      context: ./server
+      dockerfile: dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    expose:
+      - "7350"
+      - "7351"
+      - "7352"
+    networks:
+      - private
+      - web-gateway
+
+volumes:
+  pgdata:
+
+networks:
+  private:
+    driver: bridge
+  web-gateway:
+    external: true

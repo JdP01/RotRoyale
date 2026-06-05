@@ -26,8 +26,9 @@ function LoginPage({ onLoginSuccess }) {
       
       // Create client with explicit configuration
 
-      //const client = new Nakama.Client("defaultkey", "147.182.219.213", 7350, false); //use this for production
-      const client = new Nakama.Client("defaultkey", "localhost", 7350, false); //use this for local testing
+      const host = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
+      const useSsl = window.location.protocol === 'https:';
+      const client = new Nakama.Client("defaultkey", host, 7350, useSsl);
       
       // Add timeout and retry logic
       const timeoutPromise = new Promise((_, reject) =>
