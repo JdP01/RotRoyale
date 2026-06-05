@@ -26,9 +26,11 @@ function LoginPage({ onLoginSuccess }) {
       
       // Create client with explicit configuration
 
-      const host = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const host = window.location.hostname;
       const useSsl = window.location.protocol === 'https:';
-      const client = new Nakama.Client("defaultkey", host, 7350, useSsl);
+      const port = isLocalhost ? '7350' : (window.location.port || (useSsl ? '443' : '80'));
+      const client = new Nakama.Client("defaultkey", host, port, useSsl);
       
       // Add timeout and retry logic
       const timeoutPromise = new Promise((_, reject) =>
@@ -67,23 +69,25 @@ function LoginPage({ onLoginSuccess }) {
       console.error("Nakama authentication error:", err);
       
       let errorMessage = "Login failed. Please try again.";
+      const rawMessage = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+      const normalizedMessage = rawMessage.toLowerCase();
       
       // Enhanced error handling
-      if (err.message.includes("timeout") || err.message.includes("TIMEOUT")) {
+      if (normalizedMessage.includes("timeout")) {
         errorMessage = "Connection timeout. Please check if Nakama server is running.";
-      } else if (err.message.includes("CORS") || err.response?.type === 'cors') {
+      } else if (normalizedMessage.includes("cors") || err.response?.type === 'cors') {
         errorMessage = "CORS error. Please check server configuration.";
-      } else if (err.status === 401 || err.message.includes("401")) {
+      } else if (err.status === 401 || normalizedMessage.includes("401")) {
         errorMessage = "Authentication failed. Check your credentials.";
-      } else if (err.message.includes("UNAVAILABLE") || err.message.includes("ECONNREFUSED")) {
-        errorMessage = "Cannot connect to server. Is Nakama running on port 7350?";
-      } else if (err.message.includes("network") || err.message.includes("fetch")) {
+      } else if (normalizedMessage.includes("unavailable") || normalizedMessage.includes("econnrefused")) {
+        errorMessage = "Cannot connect to server. Please check the Rot Royale gateway and Nakama container.";
+      } else if (normalizedMessage.includes("network") || normalizedMessage.includes("fetch")) {
         errorMessage = "Network error. Check your connection and server status.";
       }
       
       setError(errorMessage);
       console.error("Detailed error:", {
-        message: err.message,
+        message: rawMessage,
         status: err.status,
         response: err.response,
         stack: err.stack

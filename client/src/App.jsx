@@ -1,118 +1,11 @@
-import React, {useState, useCallback, useMemo} from 'react';
+import React, {useState, useCallback} from 'react';
 import './styling/index.css';
 import GameCanvas from './objects/world/GameCanvas';
 import LoginPage from './ui/LoginPage';
 import { MenuUI, MatchmakingUIWrapper } from './ui/mainMenu';
 import { usePlayerState } from './logic/PlayerState';
 
-const SHOWCASE_CHARACTERS = [
-  { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb', component: 'dino' },
-  { name: 'Right To Bear Arms', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
-  { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_display.glb', component: 'dino' }
-];
-
-function PortfolioShowcaseApp() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedCharacterIndex, setSelectedCharacterIndex] = useState(0);
-  const { reset: resetPlayerState } = usePlayerState();
-
-  const selectedCharacter = SHOWCASE_CHARACTERS[selectedCharacterIndex];
-
-  const startShowcase = () => {
-    resetPlayerState();
-    setIsPlaying(true);
-  };
-
-  const backToShowcase = () => {
-    resetPlayerState();
-    setIsPlaying(false);
-  };
-
-  if (isPlaying) {
-    return (
-      <GameCanvas
-        userSession={null}
-        currentMatch={null}
-        connectedPlayers={[]}
-        otherPlayersData={{}}
-        setConnectedPlayers={() => {}}
-        setOtherPlayersData={() => {}}
-        backToMenu={backToShowcase}
-        selectedCharacter={selectedCharacter}
-      />
-    );
-  }
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '1rem',
-      padding: '2rem',
-      textAlign: 'center',
-      background: 'radial-gradient(circle at top, #18345a 0%, #0b1627 70%)',
-      color: '#f2f6fc'
-    }}>
-      <h1 style={{ margin: 0 }}>Rot Royale - 3D Showcase</h1>
-      <p style={{ maxWidth: '680px', opacity: 0.9, margin: 0 }}>
-        Portfolio demo mode: movement, camera rig, physics, animation blending, and world interaction.
-        This mode runs without login or multiplayer services.
-      </p>
-
-      <label htmlFor="showcase-character" style={{ fontWeight: 600 }}>Character</label>
-      <select
-        id="showcase-character"
-        value={selectedCharacterIndex}
-        onChange={(e) => setSelectedCharacterIndex(Number(e.target.value))}
-        style={{
-          minWidth: '280px',
-          padding: '0.6rem 0.75rem',
-          borderRadius: '8px',
-          border: '1px solid #3a5a84',
-          background: '#0f223b',
-          color: '#f2f6fc'
-        }}
-      >
-        {SHOWCASE_CHARACTERS.map((character, index) => (
-          <option key={character.name} value={index}>
-            {character.name}
-          </option>
-        ))}
-      </select>
-
-      <button
-        onClick={startShowcase}
-        style={{
-          marginTop: '0.25rem',
-          padding: '0.75rem 1.4rem',
-          border: 'none',
-          borderRadius: '8px',
-          fontWeight: 700,
-          cursor: 'pointer',
-          background: '#23b828',
-          color: '#081411'
-        }}
-      >
-        Launch 3D Demo
-      </button>
-
-      <p style={{ opacity: 0.8, marginTop: '0.5rem' }}>
-        Controls: WASD move, Shift sprint, Space jump, mouse to look.
-      </p>
-    </div>
-  );
-}
-
 export default function App() { 
-  const showcaseMode = useMemo(() => {
-    const fromEnv = import.meta.env.VITE_PORTFOLIO_MODE === 'true';
-    const fromQuery = new URLSearchParams(window.location.search).get('showcase') === '1';
-    return fromEnv || fromQuery;
-  }, []);
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userSession, setUserSession] = useState(null);
   const [gameState, setGameState] = useState('menu');
@@ -123,10 +16,6 @@ export default function App() {
   
   // Get reset function from PlayerState
   const { reset: resetPlayerState } = usePlayerState();
-
-  if (showcaseMode) {
-    return <PortfolioShowcaseApp />;
-  }
   
   const onCharacterSelect = useCallback((character) => {
     setSelectedCharacter(character);
