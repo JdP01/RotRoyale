@@ -6,10 +6,13 @@ import { Controls } from "../world/GameCanvas";
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { usePlayerState } from "../../logic/PlayerState";
 
-export const useDinoControls = (bodyRef, setIsJumping, maxDistance) => {
+export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
     const { camera } = useThree();
     const { stamina, isExhausted, consumeStamina, regenerateStamina, fireRaycast } = usePlayerState();
     const { rapier, world } = useRapier();
+    const maxDistance = movementConfig.maxGroundDistance;
+    const moveSpeed = Number.isFinite(movementConfig.speed) ? movementConfig.speed : 10;
+    const sprintMultiplier = Number.isFinite(movementConfig.sprintMultiplier) ? movementConfig.sprintMultiplier : 1.5;
 
     // Refs for performance optimization
     const lastRegenTime = useRef(0);
@@ -267,8 +270,10 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance) => {
         // Apply movement
         if (moving) {
             vectors.dir.normalize();
-            const moveSpeed = (sprinting && !isExhausted) ? 15 : 10;
-            vectors.dir.multiplyScalar(moveSpeed);
+            const currentMoveSpeed = (sprinting && !isExhausted)
+                ? moveSpeed * sprintMultiplier
+                : moveSpeed;
+            vectors.dir.multiplyScalar(currentMoveSpeed);
         }
 
         const vel = bodyRef.current.linvel();
@@ -278,7 +283,8 @@ export const useDinoControls = (bodyRef, setIsJumping, maxDistance) => {
         setIsSprinting(sprinting && !isExhausted);
     }, [bodyRef, stamina, isExhausted, consumeStamina, regenerateStamina, cameraRotation, 
         characterRotation, jumpPressed, forwardPressed, backPressed, leftPressed, 
-        rightPressed, sprintPressed, isCurrentlySprinting, jumpTriggered, isNearGround, jump, vectors]);
+        rightPressed, sprintPressed, isCurrentlySprinting, jumpTriggered, isNearGround, jump,
+        moveSpeed, sprintMultiplier, vectors]);
 
     return {
         handleMovement,

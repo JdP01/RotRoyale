@@ -1,0 +1,14 @@
+# Local-development override. Run with:
+# docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+services:
+  rot-royale:
+    ports:
+      - "7350:7350" # Nakama API and WebSocket
+      - "7351:7351" # Nakama console
+      - "7352:7352" # Nakama runtime HTTP
+
+# The production compose file expects a reverse-proxy network. Create a normal
+# local network instead so the stack works without external infrastructure.
+networks:
+  web-gateway:
+    external: false

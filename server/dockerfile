@@ -13,7 +13,7 @@ COPY ./nakama/local.yml /nakama/data/local.yml.template
 # Copy the plugin into Nakama's modules dir
 COPY --from=build /backend/backend.so /nakama/data/modules/backend.so
 # Entrypoint: substitute env vars using sed, migrate DB, run Nakama, and load modules from /nakama/data/modules
-ENTRYPOINT ["/bin/sh","-ecx","sed 's/\\${CONSOLE_USERNAME}/'\"$CONSOLE_USERNAME\"'/g; s/\\${CONSOLE_PASSWORD}/'\"$CONSOLE_PASSWORD\"'/g' /nakama/data/local.yml.template > /nakama/data/local.yml && \
+ENTRYPOINT ["/bin/sh","-ecx","sed 's/\\${CONSOLE_USERNAME}/'\"$CONSOLE_USERNAME\"'/g; s/\\${CONSOLE_PASSWORD}/'\"$CONSOLE_PASSWORD\"'/g; s|\\${ALLOWED_ORIGINS}|'\"$ALLOWED_ORIGINS\"'|g' /nakama/data/local.yml.template > /nakama/data/local.yml && \
    /nakama/nakama migrate up --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable && \
    exec /nakama/nakama --config /nakama/data/local.yml --runtime.path /nakama/data/modules \
    --database.address postgresql://nakama:localdb@postgres:5432/nakama?sslmode=disable" ]

@@ -14,6 +14,9 @@ export const usePlayerState = create((set, get) => ({
   
   // Timeout tracking
   deathTimeoutId: null,
+  damageFadeIntervalId: null,
+  raycastTimeoutId: null,
+  enemyRaycastTimeoutId: null,
   
   // Raycast visualization state
   raycastVisible: false,
@@ -35,7 +38,11 @@ export const usePlayerState = create((set, get) => ({
   
   // Actions
   takeDamage: (amount) => {
-    const { health, isDead, deathTimeoutId } = get();
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return;
+    }
+
+    const { health, isDead, deathTimeoutId, damageFadeIntervalId } = get();
     
     // Don't take damage if already dead
     if (isDead) {
@@ -97,6 +104,10 @@ export const usePlayerState = create((set, get) => ({
     });
     
     // Fade out the overlay over 1 second
+    if (damageFadeIntervalId) {
+      clearInterval(damageFadeIntervalId);
+    }
+
     const fadeOutInterval = setInterval(() => {
       const current = get();
       const newFadeIntensity = Math.max(0, current.damageOverlayIntensity - 0.05);
@@ -104,13 +115,15 @@ export const usePlayerState = create((set, get) => ({
       if (newFadeIntensity <= 0) {
         set({
           damageOverlayVisible: false,
-          damageOverlayIntensity: 0
+          damageOverlayIntensity: 0,
+          damageFadeIntervalId: null
         });
         clearInterval(fadeOutInterval);
       } else {
         set({ damageOverlayIntensity: newFadeIntensity });
       }
     }, 50); // Update every 50ms for smooth fade
+    set({ damageFadeIntervalId: fadeOutInterval });
     
     // Broadcast to other players if callback is set
     const { broadcastCallback } = get();
@@ -144,7 +157,14 @@ export const usePlayerState = create((set, get) => ({
   },
   
   heal: (amount) => {
-    const { health, maxHealth } = get();
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return;
+    }
+
+    const { health, maxHealth, isDead } = get();
+    // A normal heal must not silently revive a dead player while the pending
+    // death timeout is still scheduled. Respawn/reset owns revival instead.
+    if (isDead) return;
     const newHealth = Math.min(maxHealth, health + amount);
     
     console.log(`💚 Healed ${amount} health. Health: ${health} → ${newHealth}`);
@@ -157,13 +177,16 @@ export const usePlayerState = create((set, get) => ({
   
   // Reset player state (on respawn)
   reset: () => {
-    const { deathTimeoutId } = get();
+    const { deathTimeoutId, damageFadeIntervalId, raycastTimeoutId, enemyRaycastTimeoutId } = get();
     
     // Clear any pending death timeout
     if (deathTimeoutId) {
       clearTimeout(deathTimeoutId);
       console.log("� Cleared pending death timeout");
     }
+    if (damageFadeIntervalId) clearInterval(damageFadeIntervalId);
+    if (raycastTimeoutId) clearTimeout(raycastTimeoutId);
+    if (enemyRaycastTimeoutId) clearTimeout(enemyRaycastTimeoutId);
     
     console.log("�🔄 Player state reset - returning to lobby");
     set({
@@ -172,6 +195,9 @@ export const usePlayerState = create((set, get) => ({
       isDead: false,
       isExhausted: false,
       deathTimeoutId: null,
+      damageFadeIntervalId: null,
+      raycastTimeoutId: null,
+      enemyRaycastTimeoutId: null,
       raycastVisible: false,
       raycastStart: null,
       raycastEnd: null,
@@ -214,13 +240,18 @@ export const usePlayerState = create((set, get) => ({
     }
     
     // Auto-hide after a short duration
-    setTimeout(() => {
-      set({ raycastVisible: false });
+    const { raycastTimeoutId } = get();
+    if (raycastTimeoutId) clearTimeout(raycastTimeoutId);
+    const timeoutId = setTimeout(() => {
+      set({ raycastVisible: false, raycastTimeoutId: null });
     }, 1500);
+    set({ raycastTimeoutId: timeoutId });
   },
   
   hideRaycast: () => {
-    set({ raycastVisible: false });
+    const { raycastTimeoutId } = get();
+    if (raycastTimeoutId) clearTimeout(raycastTimeoutId);
+    set({ raycastVisible: false, raycastTimeoutId: null });
   },
   
   // Enemy raycast actions (for visualizing other players' shots)
@@ -234,13 +265,18 @@ export const usePlayerState = create((set, get) => ({
     });
     
     // Auto-hide after a short duration
-    setTimeout(() => {
-      set({ enemyRaycastVisible: false });
+    const { enemyRaycastTimeoutId } = get();
+    if (enemyRaycastTimeoutId) clearTimeout(enemyRaycastTimeoutId);
+    const timeoutId = setTimeout(() => {
+      set({ enemyRaycastVisible: false, enemyRaycastTimeoutId: null });
     }, 1000);
+    set({ enemyRaycastTimeoutId: timeoutId });
   },
   
   hideEnemyRaycast: () => {
-    set({ enemyRaycastVisible: false });
+    const { enemyRaycastTimeoutId } = get();
+    if (enemyRaycastTimeoutId) clearTimeout(enemyRaycastTimeoutId);
+    set({ enemyRaycastVisible: false, enemyRaycastTimeoutId: null });
   },
   
   // Debug function to get current state

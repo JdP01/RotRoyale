@@ -1,5 +1,5 @@
 // src/logic/MatchmakingLogic.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * Custom hook that handles all matchmaking logic
@@ -21,6 +21,13 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
   // How many seconds we've been searching
   const [elapsedTime, setElapsedTime] = useState(0);
 
+  // Keep the active request outside React's asynchronous state updates so a
+  // cancel/unmount that happens while addMatchmaker is still resolving cannot
+  // leave a ticket behind or allow a stale match event to start a game.
+  const activeSearchIdRef = useRef(0);
+  const activeTicketRef = useRef(null);
+  const isSearchActiveRef = useRef(false);
+
   // Set up listeners for matchmaking events from the server
   useEffect(() => {
     // Make sure we have a valid connection before setting up listeners
@@ -30,10 +37,19 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
 
     // Listen for when the server finds us a match
     socket.onmatchmakermatched = (matched) => {
+      if (!isSearchActiveRef.current) {
+        console.warn("Ignoring a match found event for an inactive search");
+        return;
+      }
+
       // console.log("Match found:", matched);
       
       // Stop showing "searching" since we found a match
       setIsSearching(false);
+      setSearchStartTime(null);
+      setMatchTicket(null);
+      activeTicketRef.current = null;
+      isSearchActiveRef.current = false;
       
       // Save the list of players who will be in our match
       setPlayersInMatch(matched.users || []);
@@ -56,6 +72,7 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
     // Listen for when we get our "ticket" (proof we're in the queue)
     socket.onmatchmakerticker = (ticket) => {
       console.log("Matchmaking ticket received:", ticket);
+      activeTicketRef.current = ticket;
       setMatchTicket(ticket);
     };
 
@@ -63,6 +80,10 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
     socket.onmatchmakererror = (error) => {
       console.error("Matchmaker error:", error);
       setIsSearching(false); // Stop showing "searching"
+      setSearchStartTime(null);
+      setMatchTicket(null);
+      activeTicketRef.current = null;
+      isSearchActiveRef.current = false;
       onMatchmakingError?.(error.message || "Matchmaking failed");
     };
 
@@ -132,6 +153,12 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
       return;
     }
 
+    // Invalidate any earlier asynchronous search before starting a new one.
+    const searchId = activeSearchIdRef.current + 1;
+    activeSearchIdRef.current = searchId;
+    activeTicketRef.current = null;
+    isSearchActiveRef.current = true;
+
     // Update our state to show we're searching
     setIsSearching(true);
     setSearchStartTime(Date.now());
@@ -139,7 +166,7 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
     
     try {
       // Set up matchmaking parameters
-      const matchmakingQuery = "+properties.region:*"; // Match with anyone in any region
+      const matchmakingQuery = "+properties.region:global +properties.game_mode:dino_battle";
       const minPlayers = 2; // Need at least 2 players for a match
       const maxPlayers = 4; // But no more than 4 players total
       
@@ -171,14 +198,26 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
         stringProperties,
         numericProperties
       );
+
+      // The search may have been cancelled while the request was in flight.
+      // Remove the newly created ticket instead of restoring stale UI state.
+      if (activeSearchIdRef.current !== searchId) {
+        await userSession.socket.removeMatchmaker(ticket);
+        return;
+      }
       
       console.log("Matchmaking started with ticket:", ticket);
+      activeTicketRef.current = ticket;
       setMatchTicket(ticket);
     } catch (error) {
+      if (activeSearchIdRef.current !== searchId) return;
       // If something goes wrong, stop searching and show the error
       console.error("Matchmaking error:", error);
       setIsSearching(false);
       setSearchStartTime(null);
+      setMatchTicket(null);
+      activeTicketRef.current = null;
+      isSearchActiveRef.current = false;
       onMatchmakingError?.(error.message || "Failed to start matchmaking");
     }
   };
@@ -194,13 +233,19 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
       return;
     }
 
-    console.log("Attempting to cancel matchmaking. Current ticket:", matchTicket);
+    // Invalidate callbacks before awaiting the network request.
+    activeSearchIdRef.current += 1;
+    const ticket = activeTicketRef.current || matchTicket;
+    activeTicketRef.current = null;
+    isSearchActiveRef.current = false;
+
+    console.log("Attempting to cancel matchmaking. Current ticket:", ticket);
 
     try {
       // If we have a ticket, use it to remove from matchmaker
-      if (matchTicket) {
-        await userSession.socket.removeMatchmaker(matchTicket);
-        console.log("Matchmaking cancelled with ticket:", matchTicket);
+      if (ticket) {
+        await userSession.socket.removeMatchmaker(ticket);
+        console.log("Matchmaking cancelled with ticket:", ticket);
       } else {
         console.log("No ticket available, but resetting search state");
       }
@@ -237,11 +282,28 @@ export const useMatchmaking = (userSession, onMatchFound, onMatchmakingError) =>
     setMatchTicket(null);
     setElapsedTime(0);
     setPlayersInMatch([]);
+    activeSearchIdRef.current += 1;
+    activeTicketRef.current = null;
+    isSearchActiveRef.current = false;
     
     // If we have a socket connection, we could notify the server about leaving
     // but typically this is handled by the game session itself
     console.log("Match left successfully");
   };
+
+  // A screen can unmount through Back to Menu without its Cancel button being
+  // pressed. Best-effort removal prevents orphaned tickets on the server.
+  useEffect(() => () => {
+    const ticket = activeTicketRef.current;
+    activeSearchIdRef.current += 1;
+    activeTicketRef.current = null;
+    isSearchActiveRef.current = false;
+    if (ticket && userSession?.socket) {
+      userSession.socket.removeMatchmaker(ticket).catch((error) => {
+        console.warn("Failed to remove matchmaking ticket during cleanup:", error);
+      });
+    }
+  }, [userSession]);
 
   // Return all the state and functions that the UI component needs
   return {

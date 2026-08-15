@@ -122,15 +122,14 @@ func (m *Match) MatchLoop(ctx context.Context, logger runtime.Logger, db *sql.DB
             if err := json.Unmarshal(msg.GetData(), &pld); err != nil {
                 continue
             }
+            // Damage must be a positive, bounded integer and must name a
+            // connected player. Reject invalid requests rather than treating
+            // them as zero-damage updates.
+            if pld.Target == "" || pld.Amount <= 0 || pld.Amount > 100 {
+                continue
+            }
             // Validate target exists and is alive.
             if tgt, ok := s.Players[pld.Target]; ok && tgt.Alive {
-                // Clamp damage to a sane range.
-                if pld.Amount < 0 {
-                    pld.Amount = 0
-                }
-                if pld.Amount > 100 {
-                    pld.Amount = 100
-                }
                 tgt.Health -= pld.Amount
                 logger.Info("💥 Player %s took %d damage, health now: %d", tgt.UserID, pld.Amount, tgt.Health)
                 if tgt.Health <= 0 {

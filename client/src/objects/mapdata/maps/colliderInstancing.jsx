@@ -248,14 +248,9 @@ export const MapRenderer = ({ mapData }) => {
     });
   }, [gameMap]);
 
-  // Use walls from mapData or fallback to default
-  const walls = mapData.walls || [
-    { position: [58, 0, 0], args: [1, 100, 115] },
-    { position: [-58, 0, 0], args: [1, 100, 115] },
-    { position: [0, 0, 58], args: [115, 100, 1] },
-    { position: [0, 0, -58], args: [115, 100, 1] },
-    { position: [0, 50.5, 0], args: [115, 1, 115] }
-  ];
+  // World bounds belong to the map data. Each wall's `args` values are full
+  // dimensions, matching Three.js BoxGeometry; Rapier expects half-extents.
+  const walls = mapData.walls ?? [];
 
   // Use water config from mapData or fallback to default
   const waterConfig = mapData.water || {
@@ -282,11 +277,14 @@ export const MapRenderer = ({ mapData }) => {
       </RigidBody>
 
       {walls.map((wall, i) => (
-        <RigidBody key={i} type="fixed" colliders="cuboid" position={wall.position}>
+        <RigidBody key={i} type="fixed" colliders={false} position={wall.position}>
+          <CuboidCollider args={wall.args.map(dimension => dimension / 2)} />
+          {wall.visible !== false && (
           <mesh>
             <boxGeometry args={wall.args} />
             <meshStandardMaterial color="purple" transparent opacity={0.1} depthWrite={false}/>
           </mesh>
+          )}
         </RigidBody>
       ))}
 
@@ -318,7 +316,7 @@ export const MapRenderer = ({ mapData }) => {
   );
 };
 
-// BeachMap component that loads beachmap.json automatically
+// Map component that loads the active game map automatically.
 const BeachMap = () => {
   const [mapData, setMapData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -326,10 +324,10 @@ const BeachMap = () => {
   React.useEffect(() => {
     const loadMapData = async () => {
       try {
-        const data = await import('../instructions/maptest.json');
+        const data = await import('../instructions/goodgame1.json');
         setMapData(data.default);
       } catch (error) {
-        console.error('Failed to load beach map data:', error);
+        console.error('Failed to load goodgame1 map data:', error);
       } finally {
         setLoading(false);
       }

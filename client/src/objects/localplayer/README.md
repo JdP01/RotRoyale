@@ -1,100 +1,72 @@
-# Character System
+# Local Player Folder
 
-This directory contains the standardized character system that supports multiple character types through JSON configuration.
+This folder is the local player character system. It handles the character model, movement, camera, and animation for the user-controlled avatar.
 
-## Usage
+## Big picture
 
-### BasicCharacter Component
+- `basic.jsx` builds the actual character
+- `basicDef.json` tells the game how each character looks and behaves
+- `controls.js` handles keyboard input, movement, sprinting, jumping, and aiming
+- `CameraRig.jsx` makes the camera follow the player smoothly
+- `basicAnimation.js` animates the body while moving
 
-The `BasicCharacter` component is the main standardized character component that accepts a `characterType` parameter:
+## Files
 
-```jsx
-import { BasicCharacter } from './basic';
+### `basic.jsx`
+Main player character component.
 
-// For Bear character
-<BasicCharacter
-  characterType="bear"
-  ref={bodyRef}
-  onRotationChange={onRotationChange}
-  onCameraPitchChange={onCameraPitchChange}
-  onAimingChange={onAimingChange}
-  onButtonStatesChange={onButtonStatesChange}
-  isNetworkedPlayer={false}
-  networkButtonStates={null}
-  networkPosition={null}
-  networkRotation={null}
-/>
+- Creates the 3D player body and loads the correct models for the chosen character type
+- Supports both bear and dino through the `characterType` prop
+- Sets up refs for body parts like arms, legs, head, tail, and main group
+- Keeps movement state like walking, sprinting, and jumping
+- Connects movement logic and animation updates
+- Exposes a wrapper export for `Bear` and `Dino`
 
-// For Dino character
-<BasicCharacter
-  characterType="dino"
-  // ... same props
-/>
-```
+### `basicAnimation.js`
+Shared animation logic for the local player.
 
-### Legacy Components
+- Handles walk/run animation timing
+- Moves legs and arms in opposite phases for natural motion
+- Adds body bobbing and head motion
+- Supports jump pose and idle reset behavior
+- Can be tuned with config values for each character type
 
-For backward compatibility, the old component names are still available:
+### `bearAnimation.js`
+Older or experimental bear-specific animation hook.
 
-```jsx
-import { Bear, Dino } from './basic';
+- Looks similar to the main animation system
+- Not actively used in the current app flow
+- Likely leftover code from an earlier version
 
-// These automatically use the correct characterType
-<Bear {...props} />
-<Dino {...props} />
-```
+### `basicDef.json`
+Character configuration file.
 
-## Configuration
+- Stores body model paths for each character type
+- Defines scaling, positions, rotations, and physics data
+- Includes movement settings like speed, sprint, jump, and camera lerp
+- Includes animation tuning values for bear and dino
+- This is the main place to adjust a character without rewriting logic
 
-Character configurations are defined in `basicDef.json`. Each character type has:
+### `controls.js`
+Player input and movement controller.
 
-### Body Parts
-- `body`: Main body model path
-- `head`: Head model path
-- `leftLeg`, `rightLeg`: Leg model paths
-- `leftArm`, `rightArm`: Arm model paths
-- `tail`: Tail model path (optional)
-- `weapon`: Weapon model path
+- Reads keyboard input
+- Handles forward/back/left/right movement
+- Tracks sprint stamina and exhaustion
+- Handles jumping and ground checks
+- Updates button states for networking
+- Controls aiming and mouse-based camera rotation
 
-### Scale Settings
-- `main`: Overall character scale
-- Individual scales for each body part
+### `CameraRig.jsx`
+Camera follow system.
 
-### Positions
-- Position offsets for each body part
-- Weapon attachment positions
+- Keeps the camera behind the player
+- Smooths camera motion for a nicer feel
+- Adjusts distance and height while aiming
+- Makes the camera look toward the character and forward direction
 
-### Rotations
-- Rotation values for each body part
+## Notes
 
-### Physics
-- Rapier physics settings
-- Collider configurations
-- Gravity and friction settings
-
-### Movement
-- Speed and sprint multipliers
-- Jump force and fall damage settings
-- Animation interpolation settings
-
-### Animations
-- Speed multipliers for different animation states
-- Bob height and swing amounts
-- Animation rate settings
-
-## Adding New Characters
-
-To add a new character type:
-
-1. Add a new entry to `basicDef.json` with all required configuration
-2. Place the 3D model files in the appropriate directory structure
-3. Use `BasicCharacter` with the new `characterType`
-
-Example:
-```jsx
-<BasicCharacter characterType="robot" {...props} />
-```
-
-## Error Handling
-
-The component gracefully handles missing body parts by checking if models exist before rendering them. If a character type is not found in the configuration, it will log an error and return null.
+- This folder is for the local player only.
+- The shared game logic for other players usually lives elsewhere.
+- If you want to change a character, start with `basicDef.json` and then tweak animation or movement logic in the matching files.

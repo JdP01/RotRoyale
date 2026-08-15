@@ -132,7 +132,7 @@ export const BasicCharacter = ({
     const { updateAdvancedAnimations } = useBasicAnimations();
     
     // Get controller logic - for local players use actual controls, for networked use simulated controls
-    const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping, config.movement.maxGroundDistance) : null;
+    const controls = !isNetworkedPlayer ? useDinoControls(bodyRef, setIsJumping, config.movement) : null;
     
     // Expose the main group ref through the body ref for hit detection
     useEffect(() => {

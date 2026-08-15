@@ -45,7 +45,7 @@
       "weaponRight": [0, -1.5, 0]
     },
     "physics": {
-      "position": [2, 3, 0],
+      "position": [50, -40, 20],
       "gravityScale": 5,
       "friction": 0,
       "restitution": 0,
@@ -62,7 +62,7 @@
       }
     },
     "movement": {
-      "speed": 1.0,
+      "speed": 5.0,
       "sprintMultiplier": 1.5,
       "maxGroundDistance": 0.000000001,
       "fallDamageThreshold": 30,
@@ -134,7 +134,7 @@
       "weaponRight": [0, -1.5, 0]
     },
     "physics": {
-      "position": [2, 3, 0],
+      "position": [50, -40, 20],
       "gravityScale": 5,
       "friction": 0,
       "restitution": 0,
@@ -165,7 +165,7 @@
       }
     },
     "movement": {
-      "speed": 1.0,
+      "speed": 20.0,
       "sprintMultiplier": 1.5,
       "maxGroundDistance": 0.1,
       "fallDamageThreshold": 30,
