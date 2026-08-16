@@ -7,7 +7,7 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { usePlayerState } from '../../logic/PlayerState';
 import { findPath, simplifyPath } from '../mapdata/navigation';
 
-const ENEMY_SCALE = 1;
+const ENEMY_SCALE = 1.4;
 const CHASE_SPEED = 12;
 const ATTACK_RANGE = 2.4;
 const ATTACK_DAMAGE = 5;
@@ -19,6 +19,8 @@ const HITS_TO_DEFEAT = 5;
 const PATH_RECALCULATION_INTERVAL = 1.25;
 const WAYPOINT_REACHED_DISTANCE = 1.2;
 const STEERING_RESPONSE = 7;
+const HIT_FLASH_DURATION = 0.12;
+const DEATH_FALL_DURATION = 0.65;
 
 export function SkeletonVoxy({ targetRef, position = [40, -40, 20], takeDamage, onDefeated, navigationGrid }) {
   const bodyRef = useRef();
@@ -32,12 +34,19 @@ export function SkeletonVoxy({ targetRef, position = [40, -40, 20], takeDamage, 
   const nextJumpAtRef = useRef(0);
   const isGroundedRef = useRef(false);
   const isAliveRef = useRef(true);
+  const isDyingRef = useRef(false);
   const hitsRemainingRef = useRef(HITS_TO_DEFEAT);
   const lastPositionRef = useRef();
   const lastProgressAtRef = useRef(0);
   const pathRef = useRef([]);
   const pathIndexRef = useRef(0);
   const nextPathUpdateAtRef = useRef(0);
+  const stateClockRef = useRef(0);
+  const hitFlashEndsAtRef = useRef(0);
+  const isHitFlashActiveRef = useRef(false);
+  const deathStartedAtRef = useRef(null);
+  const deathReportedRef = useRef(false);
+  const materialStatesRef = useRef(new Map());
   const [isAlive, setIsAlive] = useState(true);
   const target = useMemo(() => new THREE.Vector3(), []);
   const direction = useMemo(() => new THREE.Vector3(), []);
@@ -95,6 +104,29 @@ export function SkeletonVoxy({ targetRef, position = [40, -40, 20], takeDamage, 
     playAnimation('jump', false);
   };
 
+  const setHitFlash = (isActive) => {
+    model.traverse((child) => {
+      if (!child.isMesh) return;
+
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      materials.forEach((material) => {
+        if (!material?.emissive) return;
+
+        if (!materialStatesRef.current.has(material)) {
+          materialStatesRef.current.set(material, {
+            emissive: material.emissive.getHex(),
+            emissiveIntensity: material.emissiveIntensity,
+          });
+        }
+
+        const originalState = materialStatesRef.current.get(material);
+        material.emissive.setHex(isActive ? 0xff0000 : originalState.emissive);
+        material.emissiveIntensity = isActive ? 1.1 : originalState.emissiveIntensity;
+        material.needsUpdate = true;
+      });
+    });
+  };
+
   const handleGroundEnter = ({ other }) => {
     if (other.rigidBodyObject?.name === 'floor') {
       isGroundedRef.current = true;
@@ -110,20 +142,21 @@ export function SkeletonVoxy({ targetRef, position = [40, -40, 20], takeDamage, 
   };
 
   const defeat = useCallback(() => {
-    isAliveRef.current = false;
+    if (isDyingRef.current) return;
+
+    isDyingRef.current = true;
     isGroundedRef.current = false;
     lastPositionRef.current = undefined;
-    bodyRef.current = null;
-    setIsAlive(false);
-    onDefeated?.();
-  }, [onDefeated]);
+    deathStartedAtRef.current = null;
+  }, []);
 
   const receiveRaycastHit = useCallback(() => {
-    if (!isAliveRef.current) return;
+    if (!isAliveRef.current || isDyingRef.current) return;
 
     hitsRemainingRef.current -= 1;
     console.log(`SkeletonVoxy hit. ${hitsRemainingRef.current} hits remaining.`);
     showHitMarker();
+    hitFlashEndsAtRef.current = stateClockRef.current + HIT_FLASH_DURATION;
 
     if (hitsRemainingRef.current <= 0) {
       defeat();
@@ -162,11 +195,37 @@ export function SkeletonVoxy({ targetRef, position = [40, -40, 20], takeDamage, 
   useFrame((state, delta) => {
     if (!isAliveRef.current) return;
 
+    stateClockRef.current = state.clock.elapsedTime;
     mixerRef.current?.update(delta);
 
     const body = bodyRef.current;
     const targetBody = targetRef.current;
     if (!body || !targetBody) return;
+
+    const isFlashing = state.clock.elapsedTime < hitFlashEndsAtRef.current;
+    if (isFlashing !== isHitFlashActiveRef.current) {
+      setHitFlash(isFlashing);
+      isHitFlashActiveRef.current = isFlashing;
+    }
+
+    if (isDyingRef.current) {
+      if (deathStartedAtRef.current === null) deathStartedAtRef.current = state.clock.elapsedTime;
+
+      const fallProgress = Math.min(1, (state.clock.elapsedTime - deathStartedAtRef.current) / DEATH_FALL_DURATION);
+      if (modelRef.current) {
+        modelRef.current.rotation.x = fallProgress * Math.PI / 2;
+      }
+      body.setLinvel({ x: 0, y: body.linvel().y, z: 0 }, true);
+
+      if (fallProgress >= 1 && !deathReportedRef.current) {
+        deathReportedRef.current = true;
+        isAliveRef.current = false;
+        bodyRef.current = null;
+        setIsAlive(false);
+        onDefeated?.();
+      }
+      return;
+    }
 
     const enemyPosition = body.translation();
     const playerPosition = targetBody.translation();
