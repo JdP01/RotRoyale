@@ -2,15 +2,15 @@ import React from "react";
 import { Sky } from "@react-three/drei";
 import BeachMap from "../mapdata/maps/colliderInstancing.jsx";
 
-const lightPos = [10, 120, 100];
+const lightPos = [10, 1, 100];
 
 const GameEnvironment = () => {
   return (
     <>
       {/* Sky and lighting setup */}
-      <Sky sunPosition={lightPos} mieCoefficient={0.001} rayleigh={1.2} turbidity={20} castShadow />
+      <Sky sunPosition={lightPos} mieCoefficient={0.0001} rayleigh={2} turbidity={100} castShadow />
 
-      <ambientLight intensity={0.8} color="#87CEEB" />
+      <ambientLight intensity={0.5} color="#a1f9ff" />
       <directionalLight
         position={lightPos}
         intensity={3}
@@ -32,9 +32,9 @@ const GameEnvironment = () => {
         color={'#b3d9ff'}
       />
       <directionalLight
-        position={[0, 20, -100]}
+        position={[-20, 20, -100]}
         intensity={1.2}
-        color={'#ffd700'}
+        color={'#e20000'}
       />
 
       {/* Load the complete beach map with instanced props */}

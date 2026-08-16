@@ -1,5 +1,21 @@
 /* GameCanvas.css */
 
+.enemy-respawn-hud {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  background: rgba(18, 24, 30, 0.82);
+  color: #ffffff;
+  font-size: 16px;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
 .game-menu {
     width: 100vw;
     height: 100vh;

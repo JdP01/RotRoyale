@@ -74,6 +74,26 @@
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
+.ammo-container {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 216, 94, 0.5);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.ammo-container strong {
+  color: #ffe05c;
+  font-size: 18px;
+}
+
 /* Death Overlay */
 .death-overlay {
   position: fixed;

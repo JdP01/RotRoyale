@@ -62,7 +62,7 @@
       }
     },
     "movement": {
-      "speed": 5.0,
+      "speed": 15.0,
       "sprintMultiplier": 1.5,
       "maxGroundDistance": 0.000000001,
       "fallDamageThreshold": 30,
@@ -165,7 +165,7 @@
       }
     },
     "movement": {
-      "speed": 20.0,
+      "speed": 15.0,
       "sprintMultiplier": 1.5,
       "maxGroundDistance": 0.1,
       "fallDamageThreshold": 30,

@@ -59,8 +59,9 @@ export const PlayerUI = ({ isAiming = false }) => {
     stamina, 
     maxHealth, 
     maxStamina, 
+    clipAmmo,
+    clipCapacity,
     isDead, 
-    reset,
     damageOverlayVisible,
     damageOverlayIntensity
   } = usePlayerState();
@@ -107,6 +108,11 @@ export const PlayerUI = ({ isAiming = false }) => {
             <div className="stat-bar-background" />
           </div>
           <span className="stat-text">{Math.floor(stamina)}/{maxStamina}</span>
+        </div>
+
+        <div className="ammo-container">
+          <span>Clip</span>
+          <strong>{clipAmmo}/{clipCapacity}</strong>
         </div>
         
         {/* Death Overlay */}

@@ -3,6 +3,9 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Box, KeyboardControls, OrbitControls, Sky } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 import { BasicCharacter } from '../localplayer/basic';
+import { SkeletonVoxy } from '../localplayer/SkeletonVoxy';
+import mapData from '../mapdata/instructions/goodgame1.json';
+import { createNavigationGrid, createRandomSpawnPositions } from '../mapdata/navigation';
 import * as THREE from "three";
 import { CameraRig } from '../localplayer/CameraRig';
 import GameEnvironment from './GameEnvironment';
@@ -18,6 +21,7 @@ export const Controls = {
   right: "right",
   jump: "jump",
   sprint: "sprint",
+  reload: "reload",
   //shoot: "shoot"
 }
 
@@ -37,6 +41,18 @@ export const OtherPlayer = ({ playerData, userSession }) => {
     );
 };
 
+const EnemyRespawnHud = () => {
+  const enemyRespawnSeconds = usePlayerState((state) => state.enemyRespawnSeconds);
+
+  if (enemyRespawnSeconds <= 0) return null;
+
+  return (
+    <div className="enemy-respawn-hud" role="status">
+      Skeleton will respawn in {enemyRespawnSeconds}
+    </div>
+  );
+};
+
 // Fixed GameLogic component
 const GameLogic = ({
   userSession,
@@ -53,6 +69,16 @@ const GameLogic = ({
   backToMenu
 }) => {
   const lastSentTime = useRef(0);
+  const defeatedSkeletonsRef = useRef(0);
+  const isPreparingSkeletonWaveRef = useRef(false);
+  const [skeletonWaveSize, setSkeletonWaveSize] = useState(1);
+  const [skeletonWaveNumber, setSkeletonWaveNumber] = useState(1);
+  const [isPreparingSkeletonWave, setIsPreparingSkeletonWave] = useState(false);
+  const navigationGrid = useMemo(() => createNavigationGrid(mapData), []);
+  const skeletonSpawnPositions = useMemo(
+    () => createRandomSpawnPositions(navigationGrid, skeletonWaveSize, mapData.water.position[1] + 1.2),
+    [navigationGrid, skeletonWaveNumber, skeletonWaveSize],
+  );
   const [localPlayerButtonStates, setLocalPlayerButtonStates] = useState({
     forward: false,
     back: false,
@@ -63,7 +89,39 @@ const GameLogic = ({
   });
   
   // Get raycast visualization state and player state functions
-  const { raycastVisible, raycastStart, raycastEnd, enemyRaycastVisible, enemyRaycastStart, enemyRaycastEnd, setBroadcastCallback, setLobbyKickCallback, takeDamage, showEnemyRaycast } = usePlayerState();
+  const { raycastVisible, raycastStart, raycastEnd, enemyRaycastVisible, enemyRaycastStart, enemyRaycastEnd, enemyRespawnSeconds, setBroadcastCallback, setEnemyRespawnSeconds, setLobbyKickCallback, takeDamage, showEnemyRaycast } = usePlayerState();
+
+  const handleSkeletonDefeated = useCallback(() => {
+    if (isPreparingSkeletonWaveRef.current) return;
+
+    defeatedSkeletonsRef.current += 1;
+    if (defeatedSkeletonsRef.current < skeletonWaveSize) return;
+
+    defeatedSkeletonsRef.current = 0;
+    isPreparingSkeletonWaveRef.current = true;
+    setIsPreparingSkeletonWave(true);
+    setEnemyRespawnSeconds(5);
+  }, [setEnemyRespawnSeconds, skeletonWaveSize]);
+
+  useEffect(() => {
+    if (!isPreparingSkeletonWave) return undefined;
+
+    if (enemyRespawnSeconds === 0) {
+      setSkeletonWaveSize((size) => size * 2);
+      setSkeletonWaveNumber((wave) => wave + 1);
+      isPreparingSkeletonWaveRef.current = false;
+      setIsPreparingSkeletonWave(false);
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      setEnemyRespawnSeconds(enemyRespawnSeconds - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [enemyRespawnSeconds, isPreparingSkeletonWave, setEnemyRespawnSeconds]);
+
+  useEffect(() => () => setEnemyRespawnSeconds(0), [setEnemyRespawnSeconds]);
 
   // Set up broadcast callback for sending game events to server
   useEffect(() => {
@@ -412,6 +470,17 @@ const GameLogic = ({
         userSession={userSession}
         currentMatch={currentMatch}
       />
+
+      {!currentMatch && !isPreparingSkeletonWave && Array.from({ length: skeletonWaveSize }, (_, index) => (
+        <SkeletonVoxy
+          key={`skeleton-wave-${skeletonWaveNumber}-${index}`}
+          targetRef={dinoRef}
+          takeDamage={takeDamage}
+          onDefeated={handleSkeletonDefeated}
+          navigationGrid={navigationGrid}
+          position={skeletonSpawnPositions[index]}
+        />
+      ))}
 
       {/* Other players - simplified rendering */}
       {Object.entries(otherPlayersData).map(([playerId, playerData]) => {
@@ -767,6 +836,7 @@ export default function GameCanvas({
     { name: Controls.right, keys: ["KeyD"] },
     { name: Controls.jump, keys: ["Space"] },
     { name: Controls.sprint, keys: ["Shift"] },
+    { name: Controls.reload, keys: ["KeyR"] },
     
   ], []);
 
@@ -774,6 +844,7 @@ export default function GameCanvas({
     <div className="game-container">
       {/* Player Health/Stamina UI */}
       <PlayerUI isAiming={isAiming} />
+      <EnemyRespawnHud />
       
       {/* Enhanced Game Info Overlay */}
       <div className="game-info-overlay">

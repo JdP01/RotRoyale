@@ -7,6 +7,8 @@ export const usePlayerState = create((set, get) => ({
   maxHealth: 100,
   stamina: 100,
   maxStamina: 100,
+  clipAmmo: 10,
+  clipCapacity: 10,
   
   // State flags
   isDead: false,
@@ -27,6 +29,7 @@ export const usePlayerState = create((set, get) => ({
   enemyRaycastVisible: false,
   enemyRaycastStart: null,
   enemyRaycastEnd: null,
+  enemyRespawnSeconds: 0,
   
   // Damage overlay state
   damageOverlayIntensity: 0,
@@ -35,6 +38,7 @@ export const usePlayerState = create((set, get) => ({
   // Callback functions
   broadcastCallback: null,
   lobbyKickCallback: null,
+  localRaycastCallbacks: new Set(),
   
   // Actions
   takeDamage: (amount) => {
@@ -177,7 +181,7 @@ export const usePlayerState = create((set, get) => ({
   
   // Reset player state (on respawn)
   reset: () => {
-    const { deathTimeoutId, damageFadeIntervalId, raycastTimeoutId, enemyRaycastTimeoutId } = get();
+    const { deathTimeoutId, damageFadeIntervalId, raycastTimeoutId, enemyRaycastTimeoutId, clipCapacity } = get();
     
     // Clear any pending death timeout
     if (deathTimeoutId) {
@@ -192,6 +196,7 @@ export const usePlayerState = create((set, get) => ({
     set({
       health: 100,
       stamina: 100,
+      clipAmmo: clipCapacity,
       isDead: false,
       isExhausted: false,
       deathTimeoutId: null,
@@ -204,6 +209,7 @@ export const usePlayerState = create((set, get) => ({
       enemyRaycastVisible: false,
       enemyRaycastStart: null,
       enemyRaycastEnd: null,
+      enemyRespawnSeconds: 0,
       damageOverlayVisible: false,
       damageOverlayIntensity: 0
       // Note: NOT clearing lobbyKickCallback and broadcastCallback here
@@ -216,19 +222,48 @@ export const usePlayerState = create((set, get) => ({
   
   // Set callback for kicking player back to lobby on death
   setLobbyKickCallback: (callback) => set({ lobbyKickCallback: callback }),
+
+  registerLocalRaycastCallback: (callback) => set((state) => {
+    const callbacks = new Set(state.localRaycastCallbacks);
+    callbacks.add(callback);
+    return { localRaycastCallbacks: callbacks };
+  }),
+
+  unregisterLocalRaycastCallback: (callback) => set((state) => {
+    const callbacks = new Set(state.localRaycastCallbacks);
+    callbacks.delete(callback);
+    return { localRaycastCallbacks: callbacks };
+  }),
+
+  setEnemyRespawnSeconds: (seconds) => set({ enemyRespawnSeconds: seconds }),
+
+  reloadClip: () => {
+    const { clipAmmo, clipCapacity } = get();
+    if (clipAmmo >= clipCapacity) return false;
+
+    set({ clipAmmo: clipCapacity });
+    return true;
+  },
   
   // Raycast actions
   fireRaycast: (startPos, endPos) => {
+    const { clipAmmo } = get();
+    if (clipAmmo <= 0) return false;
+
     // console.log(`🔫 Raycast fired from (${startPos.x.toFixed(1)}, ${startPos.y.toFixed(1)}, ${startPos.z.toFixed(1)}) to (${endPos.x.toFixed(1)}, ${endPos.y.toFixed(1)}, ${endPos.z.toFixed(1)})`);
     
     set({
+      clipAmmo: clipAmmo - 1,
       raycastVisible: true,
       raycastStart: { ...startPos },
       raycastEnd: { ...endPos }
     });
     
+    // Resolve every local single-player target before broadcasting to other players.
+    const { localRaycastCallbacks, broadcastCallback } = get();
+    localRaycastCallbacks.forEach((callback) => callback(startPos, endPos));
+
     // Broadcast raycast to other players if callback is set
-    const { broadcastCallback } = get();
     if (broadcastCallback) {
       broadcastCallback({
         type: 'raycast_shot',
@@ -246,6 +281,7 @@ export const usePlayerState = create((set, get) => ({
       set({ raycastVisible: false, raycastTimeoutId: null });
     }, 1500);
     set({ raycastTimeoutId: timeoutId });
+    return true;
   },
   
   hideRaycast: () => {

@@ -8,7 +8,7 @@ import { usePlayerState } from "../../logic/PlayerState";
 
 export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
     const { camera } = useThree();
-    const { stamina, isExhausted, consumeStamina, regenerateStamina, fireRaycast } = usePlayerState();
+    const { stamina, isExhausted, consumeStamina, regenerateStamina, fireRaycast, reloadClip } = usePlayerState();
     const { rapier, world } = useRapier();
     const maxDistance = movementConfig.maxGroundDistance;
     const moveSpeed = Number.isFinite(movementConfig.speed) ? movementConfig.speed : 10;
@@ -18,6 +18,7 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
     const lastRegenTime = useRef(0);
     const sprintKeyPressed = useRef(false);
     const sprintKeyValidated = useRef(false);
+    const reloadKeyPressed = useRef(false);
     const staminaDepletionTime = useRef(0);
     const regenerationDelayActive = useRef(false);
     const [jumpTriggered, setJumpTriggered] = useState(false);
@@ -45,6 +46,7 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
     const leftPressed = useKeyboardControls((state) => state[Controls.left]);
     const rightPressed = useKeyboardControls((state) => state[Controls.right]);
     const sprintPressed = useKeyboardControls((state) => state[Controls.sprint]);
+    const reloadPressed = useKeyboardControls((state) => state[Controls.reload]);
 
     // Button states for networking
     const [buttonStates, setButtonStates] = useState({
@@ -106,6 +108,13 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
             right: rightPressed, jump: jumpPressed, sprint: sprintPressed
         });
     }, [forwardPressed, backPressed, leftPressed, rightPressed, jumpPressed, sprintPressed, stamina]);
+
+    useEffect(() => {
+        if (reloadPressed && !reloadKeyPressed.current) {
+            reloadClip();
+        }
+        reloadKeyPressed.current = reloadPressed;
+    }, [reloadPressed, reloadClip]);
 
     // Pointer lock and mouse controls
     useEffect(() => {
