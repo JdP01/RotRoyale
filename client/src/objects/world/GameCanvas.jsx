@@ -41,14 +41,23 @@ export const OtherPlayer = ({ playerData, userSession }) => {
     );
 };
 
-const EnemyRespawnHud = () => {
-  const enemyRespawnSeconds = usePlayerState((state) => state.enemyRespawnSeconds);
+const GameStatusHud = () => {
+  const { clipAmmo, enemyRespawnSeconds, health, maxHealth } = usePlayerState();
+  const isLowHealth = health > 0 && health / maxHealth <= 0.25;
 
-  if (enemyRespawnSeconds <= 0) return null;
+  if (enemyRespawnSeconds <= 0 && clipAmmo > 0 && !isLowHealth) return null;
 
   return (
-    <div className="enemy-respawn-hud" role="status">
-      Skeleton will respawn in {enemyRespawnSeconds}
+    <div className="game-status-hud" role="status">
+      {enemyRespawnSeconds > 0 && (
+        <p className="game-status-message">NEXT SKELY SPAWNING IN {enemyRespawnSeconds}</p>
+      )}
+      {clipAmmo === 0 && (
+        <p className="game-status-message game-status-alert">OUT OF AMMO. PRESS R TO RELOAD.</p>
+      )}
+      {isLowHealth && (
+        <p className="game-status-message game-status-alert">LOW HEALTH: {Math.ceil(health)}/{maxHealth}</p>
+      )}
     </div>
   );
 };
@@ -844,7 +853,7 @@ export default function GameCanvas({
     <div className="game-container">
       {/* Player Health/Stamina UI */}
       <PlayerUI isAiming={isAiming} />
-      <EnemyRespawnHud />
+      <GameStatusHud />
       
       {/* Enhanced Game Info Overlay */}
       <div className="game-info-overlay">

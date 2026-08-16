@@ -1,19 +1,31 @@
 /* GameCanvas.css */
 
-.enemy-respawn-hud {
+.game-status-hud {
   position: fixed;
-  top: 24px;
+  top: 22vh;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 20;
-  padding: 10px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 6px;
-  background: rgba(18, 24, 30, 0.82);
+  z-index: 120;
+  width: min(90vw, 900px);
   color: #ffffff;
-  font-size: 16px;
-  letter-spacing: 0;
+  font-family: "Press Start 2P", "Courier New", monospace;
+  text-align: center;
   pointer-events: none;
+}
+
+.game-status-message {
+  margin: 0 0 14px;
+  color: #f6f4d8;
+  font-size: clamp(18px, 2.5vw, 34px);
+  font-weight: bold;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-shadow: 3px 3px 0 #17212a, -1px -1px 0 #17212a;
+}
+
+.game-status-alert {
+  color: #ff4545;
+  text-shadow: 3px 3px 0 #310a0a, -1px -1px 0 #310a0a;
 }
 
 .game-menu {

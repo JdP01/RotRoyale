@@ -7,8 +7,8 @@ export const usePlayerState = create((set, get) => ({
   maxHealth: 100,
   stamina: 100,
   maxStamina: 100,
-  clipAmmo: 10,
-  clipCapacity: 10,
+  clipAmmo: 20,
+  clipCapacity: 20,
   
   // State flags
   isDead: false,
@@ -19,6 +19,7 @@ export const usePlayerState = create((set, get) => ({
   damageFadeIntervalId: null,
   raycastTimeoutId: null,
   enemyRaycastTimeoutId: null,
+  hitMarkerTimeoutId: null,
   
   // Raycast visualization state
   raycastVisible: false,
@@ -34,6 +35,7 @@ export const usePlayerState = create((set, get) => ({
   // Damage overlay state
   damageOverlayIntensity: 0,
   damageOverlayVisible: false,
+  hitMarkerVisible: false,
   
   // Callback functions
   broadcastCallback: null,
@@ -181,7 +183,7 @@ export const usePlayerState = create((set, get) => ({
   
   // Reset player state (on respawn)
   reset: () => {
-    const { deathTimeoutId, damageFadeIntervalId, raycastTimeoutId, enemyRaycastTimeoutId, clipCapacity } = get();
+    const { deathTimeoutId, damageFadeIntervalId, raycastTimeoutId, enemyRaycastTimeoutId, hitMarkerTimeoutId, clipCapacity } = get();
     
     // Clear any pending death timeout
     if (deathTimeoutId) {
@@ -191,6 +193,7 @@ export const usePlayerState = create((set, get) => ({
     if (damageFadeIntervalId) clearInterval(damageFadeIntervalId);
     if (raycastTimeoutId) clearTimeout(raycastTimeoutId);
     if (enemyRaycastTimeoutId) clearTimeout(enemyRaycastTimeoutId);
+    if (hitMarkerTimeoutId) clearTimeout(hitMarkerTimeoutId);
     
     console.log("�🔄 Player state reset - returning to lobby");
     set({
@@ -203,6 +206,7 @@ export const usePlayerState = create((set, get) => ({
       damageFadeIntervalId: null,
       raycastTimeoutId: null,
       enemyRaycastTimeoutId: null,
+      hitMarkerTimeoutId: null,
       raycastVisible: false,
       raycastStart: null,
       raycastEnd: null,
@@ -211,7 +215,8 @@ export const usePlayerState = create((set, get) => ({
       enemyRaycastEnd: null,
       enemyRespawnSeconds: 0,
       damageOverlayVisible: false,
-      damageOverlayIntensity: 0
+      damageOverlayIntensity: 0,
+      hitMarkerVisible: false
       // Note: NOT clearing lobbyKickCallback and broadcastCallback here
       // They should only be cleared when component unmounts to prevent loops
     });
@@ -236,6 +241,17 @@ export const usePlayerState = create((set, get) => ({
   }),
 
   setEnemyRespawnSeconds: (seconds) => set({ enemyRespawnSeconds: seconds }),
+
+  showHitMarker: () => {
+    const { hitMarkerTimeoutId } = get();
+    if (hitMarkerTimeoutId) clearTimeout(hitMarkerTimeoutId);
+
+    set({ hitMarkerVisible: true });
+    const timeoutId = setTimeout(() => {
+      set({ hitMarkerVisible: false, hitMarkerTimeoutId: null });
+    }, 140);
+    set({ hitMarkerTimeoutId: timeoutId });
+  },
 
   reloadClip: () => {
     const { clipAmmo, clipCapacity } = get();

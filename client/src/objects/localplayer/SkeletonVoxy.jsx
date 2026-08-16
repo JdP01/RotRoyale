@@ -44,7 +44,7 @@ export function SkeletonVoxy({ targetRef, position = [40, -40, 20], takeDamage, 
   const steeringDirection = useMemo(() => new THREE.Vector3(), []);
   const bodyRotation = useMemo(() => new THREE.Quaternion(), []);
   const { scene, animations } = useGLTF('/skeleton_voxy_anim.glb');
-  const { registerLocalRaycastCallback, unregisterLocalRaycastCallback } = usePlayerState();
+  const { registerLocalRaycastCallback, showHitMarker, unregisterLocalRaycastCallback } = usePlayerState();
   const model = useMemo(() => {
     const clonedModel = clone(scene);
     clonedModel.traverse((child) => {
@@ -123,11 +123,12 @@ export function SkeletonVoxy({ targetRef, position = [40, -40, 20], takeDamage, 
 
     hitsRemainingRef.current -= 1;
     console.log(`SkeletonVoxy hit. ${hitsRemainingRef.current} hits remaining.`);
+    showHitMarker();
 
     if (hitsRemainingRef.current <= 0) {
       defeat();
     }
-  }, [defeat]);
+  }, [defeat, showHitMarker]);
 
   const handlePlayerRaycast = useCallback((startPosition, endPosition) => {
     if (!isAliveRef.current || !modelRef.current) return;

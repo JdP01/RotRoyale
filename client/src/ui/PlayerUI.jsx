@@ -28,6 +28,13 @@ const Crosshair = ({ isAiming = false }) => {
   );
 };
 
+const HitMarker = () => (
+  <div className="hit-marker" aria-hidden="true">
+    <span></span>
+    <span></span>
+  </div>
+);
+
 // Death countdown timer component
 const DeathCountdown = () => {
   const [countdown, setCountdown] = useState(3); // 3 seconds to match the timeout
@@ -63,13 +70,15 @@ export const PlayerUI = ({ isAiming = false }) => {
     clipCapacity,
     isDead, 
     damageOverlayVisible,
-    damageOverlayIntensity
+    damageOverlayIntensity,
+    hitMarkerVisible
   } = usePlayerState();
 
   return (
     <>
       {/* Dynamic Crosshairs */}
       <Crosshair isAiming={isAiming} />
+      {hitMarkerVisible && <HitMarker />}
 
       {/* Damage Overlay */}
       {damageOverlayVisible && (
