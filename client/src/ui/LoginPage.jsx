@@ -6,6 +6,16 @@ import * as Nakama from "@heroiclabs/nakama-js";
 const googleImage = "/images/google.svg";
 const GoogleIcon = () => <img src={googleImage} alt="Google sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
 const FacebookIcon = () => <img src={googleImage} alt="Facebook sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
+const GUEST_DEVICE_ID_KEY = 'rot-royale-guest-device-id';
+
+const getGuestDeviceId = () => {
+  const existingDeviceId = window.localStorage.getItem(GUEST_DEVICE_ID_KEY);
+  if (existingDeviceId) return existingDeviceId;
+
+  const deviceId = window.crypto?.randomUUID?.() || `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  window.localStorage.setItem(GUEST_DEVICE_ID_KEY, deviceId);
+  return deviceId;
+};
 
 function LoginPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -14,6 +24,32 @@ function LoginPage({ onLoginSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const imagePath = "/images/DinoConceptArt/Title.png";
+
+  const connectAuthenticatedUser = async (client, session, isGuest = false) => {
+    const socket = client.createSocket(false, false);
+    await socket.connect(session);
+    console.log("Socket connected successfully");
+
+    const account = await client.getAccount(session);
+    console.log("User account:", account);
+
+    onLoginSuccess({
+      client,
+      session,
+      socket,
+      account,
+      username: account.user.username,
+      isGuest
+    });
+  };
+
+  const createClient = () => {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const host = window.location.hostname;
+    const useSsl = window.location.protocol === 'https:';
+    const port = isLocalhost ? '7350' : (window.location.port || (useSsl ? '443' : '80'));
+    return new Nakama.Client("defaultkey", host, port, useSsl);
+  };
 
   // Updated LoginPage.jsx authentication function
   const handleUsernamePasswordLogin = async (event) => {
@@ -26,11 +62,7 @@ function LoginPage({ onLoginSuccess }) {
       
       // Create client with explicit configuration
 
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const host = window.location.hostname;
-      const useSsl = window.location.protocol === 'https:';
-      const port = isLocalhost ? '7350' : (window.location.port || (useSsl ? '443' : '80'));
-      const client = new Nakama.Client("defaultkey", host, port, useSsl);
+      const client = createClient();
       
       // Add timeout and retry logic
       const timeoutPromise = new Promise((_, reject) =>
@@ -47,23 +79,7 @@ function LoginPage({ onLoginSuccess }) {
       const session = await Promise.race([authPromise, timeoutPromise]);
       console.log("Authenticated with Nakama:", session);
 
-      // Connect socket for real-time features
-      const socket = client.createSocket(false, false);
-      await socket.connect(session);
-      console.log("Socket connected successfully");
-
-      // Get user account info
-      const account = await client.getAccount(session);
-      console.log("User account:", account);
-
-      // Pass all necessary data to parent
-      onLoginSuccess({ 
-        client, 
-        session, 
-        socket, 
-        account,
-        username: account.user.username 
-      });
+      await connectAuthenticatedUser(client, session);
 
     } catch (err) {
       console.error("Nakama authentication error:", err);
@@ -93,6 +109,28 @@ function LoginPage({ onLoginSuccess }) {
         stack: err.stack
       });
       
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const deviceId = getGuestDeviceId();
+      const client = createClient();
+      const session = await client.authenticateDevice(
+        deviceId,
+        true,
+        `Guest-${deviceId.replace(/[^a-zA-Z0-9]/g, '').slice(-6)}`
+      );
+
+      await connectAuthenticatedUser(client, session, true);
+    } catch (err) {
+      console.error("Guest login error:", err);
+      setError("Guest login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -148,6 +186,10 @@ function LoginPage({ onLoginSuccess }) {
             </button>
             {error && <p style={{color: 'red', marginTop: '10px', fontSize: '14px'}}>{error}</p>}
           </form>
+
+          <button type="button" className="guest-login-button" onClick={handleGuestLogin} disabled={isLoading}>
+            Play as Guest
+          </button>
 
           <div className="social-login-divider">Or Sign In Using</div>
           <div className="social-login-buttons">

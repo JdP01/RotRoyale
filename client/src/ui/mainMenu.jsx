@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useSpring, animated } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 import { useMatchmaking } from '../logic/MatchmakingLogic';
+import { CHARACTERS, STOCK_VOXY } from '../logic/characters';
 import MatchmakingUI from './MatchmakingUI';
 import '../styling/GameUI.css';
 import StoreNavigation from './stores';
@@ -25,15 +26,8 @@ function DinoCharacter({ position, rotation, scale = 1, modelPath }) {
   );
 }
 
-// Move characters array outside component to prevent recreation on every render
-const CHARACTERS = [
-  { name: 'Voxy', model: 'dino_display', path: '/displayObjects/dino_display.glb', component: 'dino' },
-  { name: 'Right To Bear Arms', model: 'teddy_display', path: '/displayObjects/teddy_display.glb', component: 'bear' },
-  { name: 'RaveVoxy', model: 'dino_ket', path: '/displayObjects/dino_display.glb', component: 'dino' }
-];
-
 // Character Carousel Component
-function CharacterCarousel({ currentCharacterIndex, setCurrentCharacterIndex }) {
+function CharacterCarousel({ currentCharacterIndex, setCurrentCharacterIndex, isGuest }) {
   // Use the stable reference
   const characters = CHARACTERS;
 
@@ -126,7 +120,7 @@ function CharacterCarousel({ currentCharacterIndex, setCurrentCharacterIndex }) 
       </Canvas>
       
       {/* Navigation arrows - hidden when only one character */}
-      {characters.length > 1 && (
+      {!isGuest && characters.length > 1 && (
         <>
           <button className="carousel-arrow carousel-arrow-left" onClick={navigateLeft}>
             ‹
@@ -156,12 +150,18 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
 
   // Use the stable reference
   const characters = CHARACTERS;
+  const isGuest = userSession?.isGuest === true;
 
   useEffect(() => {
+    if (isGuest && currentCharacterIndex !== 0) {
+      setCurrentCharacterIndex(0);
+      return;
+    }
+
     if (onCharacterSelect) {
       onCharacterSelect(characters[currentCharacterIndex]);
     }
-  }, [currentCharacterIndex, onCharacterSelect]);
+  }, [currentCharacterIndex, isGuest, onCharacterSelect]);
 
   // Utility function to get user assets
   const getAssets = async () => {
@@ -230,7 +230,7 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
   };
 
   const handleSinglePlayerClick = () => {
-    const selectedCharacter = characters[currentCharacterIndex];
+    const selectedCharacter = isGuest ? STOCK_VOXY : characters[currentCharacterIndex];
     startSinglePlayer(selectedCharacter);
   };
 
@@ -245,7 +245,7 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
       cancelMatchmaking();
     } else {
       console.log("Attempting to start matchmaking...");
-      const selectedCharacter = characters[currentCharacterIndex];
+      const selectedCharacter = isGuest ? STOCK_VOXY : characters[currentCharacterIndex];
       startMatchmaking(selectedCharacter);
     }
   };
@@ -321,6 +321,7 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
         <CharacterCarousel 
           currentCharacterIndex={currentCharacterIndex}
           setCurrentCharacterIndex={setCurrentCharacterIndex}
+          isGuest={isGuest}
         />
       </div>
 

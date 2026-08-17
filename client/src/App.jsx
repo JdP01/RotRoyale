@@ -3,6 +3,7 @@ import './styling/index.css';
 import GameCanvas from './objects/world/GameCanvas';
 import LoginPage from './ui/LoginPage';
 import { MenuUI, MatchmakingUIWrapper } from './ui/mainMenu';
+import { STOCK_VOXY } from './logic/characters';
 import { usePlayerState } from './logic/PlayerState';
 
 export default function App() { 
@@ -18,8 +19,8 @@ export default function App() {
   const { reset: resetPlayerState } = usePlayerState();
   
   const onCharacterSelect = useCallback((character) => {
-    setSelectedCharacter(character);
-  }, []);
+    setSelectedCharacter(userSession?.isGuest ? STOCK_VOXY : character);
+  }, [userSession?.isGuest]);
 
   const handleLogin = (sessionData) => {
     // console.log("Login successful, session data:", sessionData);
@@ -105,14 +106,14 @@ export default function App() {
   };
 
   const startSinglePlayer = (characterData) => {
-    setSelectedCharacter(characterData);
+    setSelectedCharacter(userSession?.isGuest ? STOCK_VOXY : characterData);
     // Reset player state when starting a new game
     resetPlayerState();
     setGameState('playing');
   };
 
   const startMultiplayer = (characterData) => {
-    setSelectedCharacter(characterData);
+    setSelectedCharacter(userSession?.isGuest ? STOCK_VOXY : characterData);
     setGameState('matchmaking');
   };
 
