@@ -304,16 +304,6 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
         <div className="username-display">
           {userSession?.username || 'Player'}
         </div>
-
-        <div className="top-nav-buttons">
-          <button className="coins-button" onClick={() => setStorePage('coins')}>
-            <span className="coin-icon">🪙</span>
-            <span className="coin-amount">{currentCoins.toLocaleString()}</span>
-          </button>
-          <button className="store-button" onClick={() => setStorePage('store')}>
-            🛒
-          </button>
-        </div>
       </div>
 
       {/* Character carousel section */}
@@ -344,8 +334,8 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
                 Single Player
               </button>
               <button
-                onClick={handleMultiplayerClick}
                 className="game-mode-button multiplayer-button"
+                disabled
               >
                 Multiplayer
               </button>

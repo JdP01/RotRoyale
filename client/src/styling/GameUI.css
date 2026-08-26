@@ -342,8 +342,16 @@
     transition: transform 0.2s ease;
   }
 
-  .game-mode-button:hover {
+  .game-mode-button:not(:disabled):hover {
     transform: translateY(-2px);
+  }
+
+  .game-mode-button:disabled {
+    background: #767676;
+    color: #d4d4d4;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
   }
 
   .game-mode-button.single-player-button {
@@ -394,6 +402,16 @@
     font-size: 14px;
     max-width: 350px;
     font-family: monospace;
+  }
+
+  .round-counter {
+    margin: 0 0 14px;
+    color: #f6f4d8;
+    font-family: "Press Start 2P", "Courier New", monospace;
+    font-size: clamp(14px, 1.5vw, 20px);
+    font-weight: bold;
+    line-height: 1.35;
+    text-shadow: 3px 3px 0 #17212a, -1px -1px 0 #17212a;
   }
   
   .game-info-overlay p {

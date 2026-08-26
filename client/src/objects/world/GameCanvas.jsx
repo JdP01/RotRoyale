@@ -12,6 +12,7 @@ import GameEnvironment from './GameEnvironment';
 import { PlayerUI } from '../../ui/PlayerUI';
 import { usePlayerState } from '../../logic/PlayerState';
 import RaycastVisualizer from './RaycastVisualizer';
+import { HealthPickups } from './HealthPickups';
 //import './styling/GameCanvas.css'; // Import the CSS file  
 
 export const Controls = {
@@ -75,7 +76,8 @@ const GameLogic = ({
   onAimingChange,
   otherPlayersData,
   selectedCharacter,
-  backToMenu
+  backToMenu,
+  onWaveChange,
 }) => {
   const lastSentTime = useRef(0);
   const defeatedSkeletonsRef = useRef(0);
@@ -83,6 +85,7 @@ const GameLogic = ({
   const [skeletonWaveSize, setSkeletonWaveSize] = useState(1);
   const [skeletonWaveNumber, setSkeletonWaveNumber] = useState(1);
   const [isPreparingSkeletonWave, setIsPreparingSkeletonWave] = useState(false);
+  const [healthPickups, setHealthPickups] = useState([]);
   const navigationGrid = useMemo(() => createNavigationGrid(mapData), []);
   const skeletonSpawnPositions = useMemo(
     () => createRandomSpawnPositions(navigationGrid, skeletonWaveSize, mapData.water.position[1] + 1.2),
@@ -96,6 +99,10 @@ const GameLogic = ({
     jump: false,
     sprint: false
   });
+
+  useEffect(() => {
+    onWaveChange(skeletonWaveNumber);
+  }, [onWaveChange, skeletonWaveNumber]);
   
   // Get raycast visualization state and player state functions
   const { raycastVisible, raycastStart, raycastEnd, enemyRaycastVisible, enemyRaycastStart, enemyRaycastEnd, enemyRespawnSeconds, setBroadcastCallback, setEnemyRespawnSeconds, setLobbyKickCallback, takeDamage, showEnemyRaycast } = usePlayerState();
@@ -107,10 +114,27 @@ const GameLogic = ({
     if (defeatedSkeletonsRef.current < skeletonWaveSize) return;
 
     defeatedSkeletonsRef.current = 0;
+    const includesBanana = skeletonWaveNumber >= 3 && skeletonWaveNumber % 3 === 0;
+    const pickupPositions = createRandomSpawnPositions(
+      navigationGrid,
+      includesBanana ? 4 : 3,
+      mapData.water.position[1] + 36,
+    );
+    const newPickups = pickupPositions.map((position, index) => ({
+      id: `health-${skeletonWaveNumber}-${index}`,
+      type: includesBanana && index === pickupPositions.length - 1 ? 'banana' : 'apple',
+      position,
+    }));
+    setHealthPickups((pickups) => [...pickups, ...newPickups]);
     isPreparingSkeletonWaveRef.current = true;
     setIsPreparingSkeletonWave(true);
     setEnemyRespawnSeconds(5);
-  }, [setEnemyRespawnSeconds, skeletonWaveSize]);
+  }, [navigationGrid, setEnemyRespawnSeconds, skeletonWaveNumber, skeletonWaveSize]);
+
+  const handlePickupConsumed = useCallback((pickupId, health) => {
+    setHealthPickups((pickups) => pickups.filter((pickup) => pickup.id !== pickupId));
+    usePlayerState.getState().heal(health);
+  }, []);
 
   useEffect(() => {
     if (!isPreparingSkeletonWave) return undefined;
@@ -491,6 +515,12 @@ const GameLogic = ({
         />
       ))}
 
+      <HealthPickups
+        pickups={healthPickups}
+        playerBody={dinoRef}
+        onConsumed={handlePickupConsumed}
+      />
+
       {/* Other players - simplified rendering */}
       {Object.entries(otherPlayersData).map(([playerId, playerData]) => {
         console.log(`Rendering other player: ${playerId}`, playerData);
@@ -548,6 +578,7 @@ export default function GameCanvas({
   const [dinoRotation, setDinoRotation] = useState(0);
   const [cameraPitch, setCameraPitch] = useState(0);
   const [isAiming, setIsAiming] = useState(false);
+  const [roundNumber, setRoundNumber] = useState(1);
   const dinoRef = useRef(null);
   const hasKickedRef = useRef(false);
   const [livePlayerCount, setLivePlayerCount] = useState(null);
@@ -857,6 +888,7 @@ export default function GameCanvas({
       
       {/* Enhanced Game Info Overlay */}
       <div className="game-info-overlay">
+        {!currentMatch && <div className="round-counter">ROUND {roundNumber}</div>}
         <p><strong>Game Mode:</strong> {currentMatch ? 'Multiplayer' : 'Single Player'}</p>
         {currentMatch && (
           <>
@@ -916,6 +948,7 @@ export default function GameCanvas({
                 otherPlayersData={otherPlayersData}
                 selectedCharacter={selectedCharacter}
                 backToMenu={backToMenu}
+                onWaveChange={setRoundNumber}
               />
 
             </Physics>
