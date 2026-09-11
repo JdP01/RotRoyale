@@ -296,7 +296,9 @@ export function MenuUI({ startSinglePlayer, startMultiplayer, onLogout, userSess
           {dropdownOpen && (
             <div className="dropdown-menu">
               <button className="dropdown-item">Settings</button>
-              <button className="dropdown-item logout-btn" onClick={handleLogout}>Logout</button>
+              {!isGuest && (
+                <button className="dropdown-item logout-btn" onClick={handleLogout}>Logout</button>
+              )}
             </div>
           )}
         </div>

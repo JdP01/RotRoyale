@@ -4,7 +4,6 @@ import { Html, useGLTF } from '@react-three/drei';
 import { BallCollider, RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 
-const CONSUME_HOLD_DURATION = 3;
 const INTERACTION_DISTANCE = 4.5;
 
 const PICKUP_CONFIG = {
@@ -20,15 +19,13 @@ const PICKUP_CONFIG = {
   },
 };
 
-const HealthPickup = ({ pickup, playerBody, onConsumed }) => {
+const HealthPickup = ({ pickup, playerBody, onPickedUp }) => {
   const bodyRef = useRef();
   const visualRef = useRef();
-  const consumedRef = useRef(false);
-  const holdProgressRef = useRef(0);
+  const pickedUpRef = useRef(false);
   const isPlayerNearbyRef = useRef(false);
   const [isPlayerNearby, setIsPlayerNearby] = useState(false);
-  const [isInteractHeld, setIsInteractHeld] = useState(false);
-  const [holdProgress, setHoldProgress] = useState(0);
+  const [hasLanded, setHasLanded] = useState(false);
   const config = PICKUP_CONFIG[pickup.type];
   const { scene } = useGLTF(config.assetPath);
 
@@ -59,22 +56,16 @@ const HealthPickup = ({ pickup, playerBody, onConsumed }) => {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.code === 'KeyE' && isPlayerNearbyRef.current) setIsInteractHeld(true);
+      if (event.code !== 'KeyE' || event.repeat || !isPlayerNearbyRef.current || pickedUpRef.current) return;
+
+      if (onPickedUp(pickup.id, pickup.type)) pickedUpRef.current = true;
     };
-    const handleKeyUp = (event) => {
-      if (event.code === 'KeyE') setIsInteractHeld(false);
-    };
-    const handleWindowBlur = () => setIsInteractHeld(false);
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', handleWindowBlur);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleWindowBlur);
     };
-  }, []);
+  }, [onPickedUp, pickup.id, pickup.type]);
 
   useFrame((_, delta) => {
     if (!visualRef.current) return;
@@ -91,39 +82,30 @@ const HealthPickup = ({ pickup, playerBody, onConsumed }) => {
     if (playerIsNearby !== isPlayerNearbyRef.current) {
       isPlayerNearbyRef.current = playerIsNearby;
       setIsPlayerNearby(playerIsNearby);
-      if (!playerIsNearby) setIsInteractHeld(false);
-    }
-
-    if (!isPlayerNearby || !isInteractHeld || consumedRef.current) {
-      if (holdProgressRef.current !== 0) {
-        holdProgressRef.current = 0;
-        setHoldProgress(0);
-      }
-      return;
-    }
-
-    holdProgressRef.current += delta;
-    setHoldProgress(Math.min(holdProgressRef.current / CONSUME_HOLD_DURATION, 1));
-    if (holdProgressRef.current >= CONSUME_HOLD_DURATION) {
-      consumedRef.current = true;
-      onConsumed(pickup.id, config.health);
     }
   });
 
-  const progressDegrees = Math.round(holdProgress * 360);
+  const handleGroundCollision = ({ other }) => {
+    if (hasLanded || other.rigidBodyObject?.name !== 'floor') return;
+
+    bodyRef.current?.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    bodyRef.current?.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    setHasLanded(true);
+  };
 
   return (
     <RigidBody
       ref={bodyRef}
-      type="dynamic"
+      type={hasLanded ? "fixed" : "dynamic"}
       position={pickup.position}
       colliders={false}
       enabledRotations={[false, false, false]}
       friction={1}
       restitution={0}
       linearDamping={0.8}
+      onCollisionEnter={handleGroundCollision}
     >
-      <BallCollider args={[0.7]} friction={1} restitution={0} />
+      {!hasLanded && <BallCollider args={[0.7]} friction={1} restitution={0} />}
       <group ref={visualRef}>
         <primitive object={fruitModel} scale={0.65} />
         <pointLight color={config.glowColor} intensity={0.8} distance={5} decay={2} position={[0, -1, 0]} />
@@ -131,10 +113,7 @@ const HealthPickup = ({ pickup, playerBody, onConsumed }) => {
       {isPlayerNearby && (
         <Html position={[0, 2.3, 0]} center>
           <div style={{ alignItems: 'center', color: '#ffffff', display: 'flex', fontFamily: 'monospace', fontSize: '12px', fontWeight: 700, gap: '8px', pointerEvents: 'none', textShadow: '0 1px 3px #000000', whiteSpace: 'nowrap' }}>
-            <div style={{ alignItems: 'center', background: `conic-gradient(${config.glowColor} ${progressDegrees}deg, rgba(0, 0, 0, 0.55) ${progressDegrees}deg)`, border: '1px solid rgba(255, 255, 255, 0.8)', borderRadius: '50%', display: 'flex', height: '28px', justifyContent: 'center', width: '28px' }}>
-              <div style={{ background: 'rgba(0, 0, 0, 0.72)', borderRadius: '50%', height: '20px', width: '20px' }} />
-            </div>
-            <span>HOLD E TO EAT</span>
+            <span>PRESS E TO PICK UP</span>
           </div>
         </Html>
       )}
@@ -142,14 +121,14 @@ const HealthPickup = ({ pickup, playerBody, onConsumed }) => {
   );
 };
 
-export const HealthPickups = ({ pickups, playerBody, onConsumed }) => (
+export const HealthPickups = ({ pickups, playerBody, onPickedUp }) => (
   <>
     {pickups.map((pickup) => (
       <HealthPickup
         key={pickup.id}
         pickup={pickup}
         playerBody={playerBody}
-        onConsumed={onConsumed}
+        onPickedUp={onPickedUp}
       />
     ))}
   </>

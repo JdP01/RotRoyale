@@ -35,6 +35,33 @@ const HitMarker = () => (
   </div>
 );
 
+const InventoryBar = () => {
+  const { inventory, selectedInventorySlot, itemUseProgress } = usePlayerState();
+
+  return (
+    <div className="inventory-bar" aria-label="Inventory">
+      {inventory.map((item, index) => {
+        const itemType = item?.type || 'empty';
+        const isSelected = index === selectedInventorySlot;
+
+        return (
+          <div
+            key={index}
+            className={`inventory-slot inventory-slot-type-${itemType}${isSelected ? ' inventory-slot-selected' : ''}`}
+            aria-current={isSelected ? 'true' : undefined}
+          >
+            <span className="inventory-slot-number">{index + 1}</span>
+            <span className="inventory-slot-label">{item?.label || ''}</span>
+            {isSelected && itemType !== 'gun' && itemType !== 'empty' && (
+              <span className="inventory-use-progress" style={{ transform: `scaleX(${itemUseProgress})` }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 // Death countdown timer component
 const DeathCountdown = () => {
   const [countdown, setCountdown] = useState(3); // 3 seconds to match the timeout
@@ -79,6 +106,7 @@ export const PlayerUI = ({ isAiming = false }) => {
       {/* Dynamic Crosshairs */}
       <Crosshair isAiming={isAiming} />
       {hitMarkerVisible && <HitMarker />}
+      <InventoryBar />
 
       {/* Damage Overlay */}
       {damageOverlayVisible && (

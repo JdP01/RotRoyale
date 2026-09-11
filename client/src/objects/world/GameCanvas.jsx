@@ -26,6 +26,14 @@ export const Controls = {
   //shoot: "shoot"
 }
 
+const MAX_ACTIVE_ENEMIES = 30;
+const ROUND_INTERMISSION_SECONDS = 25;
+
+const getRoundEnemyCount = (roundNumber) => {
+  const completedRounds = roundNumber - 1;
+  return 3 + completedRounds * 3 + Math.floor((completedRounds * completedRounds) / 4);
+};
+
 export const OtherPlayer = ({ playerData, userSession }) => {
     const characterType = playerData.character?.component === 'bear' ? 'bear' : 'dino';
     
@@ -80,17 +88,13 @@ const GameLogic = ({
   onWaveChange,
 }) => {
   const lastSentTime = useRef(0);
-  const defeatedSkeletonsRef = useRef(0);
   const isPreparingSkeletonWaveRef = useRef(false);
-  const [skeletonWaveSize, setSkeletonWaveSize] = useState(1);
   const [skeletonWaveNumber, setSkeletonWaveNumber] = useState(1);
   const [isPreparingSkeletonWave, setIsPreparingSkeletonWave] = useState(false);
+  const [isRoundInProgress, setIsRoundInProgress] = useState(false);
+  const [enemySchedule, setEnemySchedule] = useState({ active: [], queued: [] });
   const [healthPickups, setHealthPickups] = useState([]);
   const navigationGrid = useMemo(() => createNavigationGrid(mapData), []);
-  const skeletonSpawnPositions = useMemo(
-    () => createRandomSpawnPositions(navigationGrid, skeletonWaveSize, mapData.water.position[1] + 1.2),
-    [navigationGrid, skeletonWaveNumber, skeletonWaveSize],
-  );
   const [localPlayerButtonStates, setLocalPlayerButtonStates] = useState({
     forward: false,
     back: false,
@@ -107,13 +111,37 @@ const GameLogic = ({
   // Get raycast visualization state and player state functions
   const { raycastVisible, raycastStart, raycastEnd, enemyRaycastVisible, enemyRaycastStart, enemyRaycastEnd, enemyRespawnSeconds, setBroadcastCallback, setEnemyRespawnSeconds, setLobbyKickCallback, takeDamage, showEnemyRaycast } = usePlayerState();
 
-  const handleSkeletonDefeated = useCallback(() => {
+  const createRoundEnemyQueue = useCallback((roundNumber) => {
+    const totalEnemies = getRoundEnemyCount(roundNumber);
+    const positions = createRandomSpawnPositions(
+      navigationGrid,
+      totalEnemies,
+      mapData.water.position[1] + 1.2,
+    );
+
+    return positions.map((position, index) => ({
+      id: `skeleton-round-${roundNumber}-${index}`,
+      position,
+    }));
+  }, [navigationGrid]);
+
+  const startRound = useCallback((roundNumber) => {
+    const queue = createRoundEnemyQueue(roundNumber);
+    setEnemySchedule({
+      active: queue.slice(0, MAX_ACTIVE_ENEMIES),
+      queued: queue.slice(MAX_ACTIVE_ENEMIES),
+    });
+    setIsRoundInProgress(true);
+  }, [createRoundEnemyQueue]);
+
+  useEffect(() => {
+    if (!currentMatch) startRound(1);
+  }, [currentMatch, startRound]);
+
+  const finishRound = useCallback(() => {
     if (isPreparingSkeletonWaveRef.current) return;
 
-    defeatedSkeletonsRef.current += 1;
-    if (defeatedSkeletonsRef.current < skeletonWaveSize) return;
-
-    defeatedSkeletonsRef.current = 0;
+    isPreparingSkeletonWaveRef.current = true;
     const includesBanana = skeletonWaveNumber >= 3 && skeletonWaveNumber % 3 === 0;
     const pickupPositions = createRandomSpawnPositions(
       navigationGrid,
@@ -126,22 +154,45 @@ const GameLogic = ({
       position,
     }));
     setHealthPickups((pickups) => [...pickups, ...newPickups]);
-    isPreparingSkeletonWaveRef.current = true;
     setIsPreparingSkeletonWave(true);
-    setEnemyRespawnSeconds(5);
-  }, [navigationGrid, setEnemyRespawnSeconds, skeletonWaveNumber, skeletonWaveSize]);
+    setEnemyRespawnSeconds(ROUND_INTERMISSION_SECONDS);
+  }, [navigationGrid, setEnemyRespawnSeconds, skeletonWaveNumber]);
 
-  const handlePickupConsumed = useCallback((pickupId, health) => {
+  const handleSkeletonDefeated = useCallback((enemyId) => {
+    setEnemySchedule((schedule) => {
+      const remainingActive = schedule.active.filter((enemy) => enemy.id !== enemyId);
+      const replacementCount = Math.max(0, MAX_ACTIVE_ENEMIES - remainingActive.length);
+      const replacements = schedule.queued.slice(0, replacementCount);
+
+      return {
+        active: [...remainingActive, ...replacements],
+        queued: schedule.queued.slice(replacements.length),
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isRoundInProgress || isPreparingSkeletonWave || enemySchedule.active.length > 0 || enemySchedule.queued.length > 0) return;
+
+    setIsRoundInProgress(false);
+    finishRound();
+  }, [enemySchedule, finishRound, isPreparingSkeletonWave, isRoundInProgress]);
+
+  const handlePickupCollected = useCallback((pickupId, pickupType) => {
+    const addedToInventory = usePlayerState.getState().addInventoryItem(pickupType);
+    if (!addedToInventory) return false;
+
     setHealthPickups((pickups) => pickups.filter((pickup) => pickup.id !== pickupId));
-    usePlayerState.getState().heal(health);
+    return true;
   }, []);
 
   useEffect(() => {
     if (!isPreparingSkeletonWave) return undefined;
 
     if (enemyRespawnSeconds === 0) {
-      setSkeletonWaveSize((size) => size * 2);
-      setSkeletonWaveNumber((wave) => wave + 1);
+      const nextWaveNumber = skeletonWaveNumber + 1;
+      setSkeletonWaveNumber(nextWaveNumber);
+      startRound(nextWaveNumber);
       isPreparingSkeletonWaveRef.current = false;
       setIsPreparingSkeletonWave(false);
       return undefined;
@@ -152,7 +203,7 @@ const GameLogic = ({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [enemyRespawnSeconds, isPreparingSkeletonWave, setEnemyRespawnSeconds]);
+  }, [enemyRespawnSeconds, isPreparingSkeletonWave, setEnemyRespawnSeconds, skeletonWaveNumber, startRound]);
 
   useEffect(() => () => setEnemyRespawnSeconds(0), [setEnemyRespawnSeconds]);
 
@@ -504,21 +555,21 @@ const GameLogic = ({
         currentMatch={currentMatch}
       />
 
-      {!currentMatch && !isPreparingSkeletonWave && Array.from({ length: skeletonWaveSize }, (_, index) => (
+      {!currentMatch && enemySchedule.active.map((enemy) => (
         <SkeletonVoxy
-          key={`skeleton-wave-${skeletonWaveNumber}-${index}`}
+          key={enemy.id}
           targetRef={dinoRef}
           takeDamage={takeDamage}
-          onDefeated={handleSkeletonDefeated}
+          onDefeated={() => handleSkeletonDefeated(enemy.id)}
           navigationGrid={navigationGrid}
-          position={skeletonSpawnPositions[index]}
+          position={enemy.position}
         />
       ))}
 
       <HealthPickups
         pickups={healthPickups}
         playerBody={dinoRef}
-        onConsumed={handlePickupConsumed}
+        onPickedUp={handlePickupCollected}
       />
 
       {/* Other players - simplified rendering */}

@@ -21,6 +21,33 @@ html, body, #root{
   overflow: hidden;
   align-items: center;
 }
+
+.guest-lobby-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+  color: #f6f4d8;
+  background: #182c2b;
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 16px;
+  text-align: center;
+}
+
+.guest-lobby-loading-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.guest-lobby-loading-actions button {
+  border-color: #a7d9ff;
+  border-radius: 4px;
+  color: #ffffff;
+  font-family: inherit;
+}
 a {
   font-weight: 500;
   color: #646cff;

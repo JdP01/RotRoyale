@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Controls } from "../world/GameCanvas";
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { usePlayerState } from "../../logic/PlayerState";
+import { useGameAudio } from './gameAudio';
 
 export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
     const { camera } = useThree();
@@ -21,6 +22,9 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
     const reloadKeyPressed = useRef(false);
     const staminaDepletionTime = useRef(0);
     const regenerationDelayActive = useRef(false);
+    const itemUseFrameRef = useRef(null);
+    const itemUseStartedAtRef = useRef(0);
+    const itemUseIdRef = useRef(null);
     const [jumpTriggered, setJumpTriggered] = useState(false);
 
     // Memoized vectors to avoid recreation
@@ -38,6 +42,7 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
     const [characterRotation, setCharacterRotation] = useState(0);
     const [isAiming, setIsAiming] = useState(false);
     const [isCurrentlySprinting, setIsCurrentlySprinting] = useState(false);
+    const { playGunshot, playReload, setMovementAudio, unlockAudio } = useGameAudio();
 
     // Keyboard controls - using individual selectors to avoid infinite loops
     const jumpPressed = useKeyboardControls((state) => state[Controls.jump]);
@@ -111,10 +116,52 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
 
     useEffect(() => {
         if (reloadPressed && !reloadKeyPressed.current) {
-            reloadClip();
+            if (reloadClip()) playReload();
         }
         reloadKeyPressed.current = reloadPressed;
-    }, [reloadPressed, reloadClip]);
+    }, [playReload, reloadPressed, reloadClip]);
+
+    const cancelItemUse = useCallback(() => {
+        if (itemUseFrameRef.current !== null) {
+            cancelAnimationFrame(itemUseFrameRef.current);
+            itemUseFrameRef.current = null;
+        }
+        itemUseIdRef.current = null;
+        usePlayerState.getState().setItemUseProgress(0);
+    }, []);
+
+    const startItemUse = useCallback(() => {
+        const playerState = usePlayerState.getState();
+        const selectedItem = playerState.inventory[playerState.selectedInventorySlot];
+        if (!selectedItem || selectedItem.type === 'gun' || playerState.isDead) return false;
+
+        cancelItemUse();
+        itemUseIdRef.current = selectedItem.id;
+        itemUseStartedAtRef.current = performance.now();
+
+        const advanceItemUse = (now) => {
+            const currentState = usePlayerState.getState();
+            const currentItem = currentState.inventory[currentState.selectedInventorySlot];
+            if (currentItem?.id !== itemUseIdRef.current || currentState.isDead) {
+                cancelItemUse();
+                return;
+            }
+
+            const progress = Math.min((now - itemUseStartedAtRef.current) / 3000, 1);
+            currentState.setItemUseProgress(progress);
+            if (progress === 1) {
+                currentState.consumeSelectedInventoryItem();
+                itemUseFrameRef.current = null;
+                itemUseIdRef.current = null;
+                return;
+            }
+
+            itemUseFrameRef.current = requestAnimationFrame(advanceItemUse);
+        };
+
+        itemUseFrameRef.current = requestAnimationFrame(advanceItemUse);
+        return true;
+    }, [cancelItemUse]);
 
     // Pointer lock and mouse controls
     useEffect(() => {
@@ -141,13 +188,20 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
 
         const handleMouseDown = (e) => {
             if (e.button === 0) {
+                unlockAudio();
                 if (document.pointerLockElement !== canvas) {
                     canvas.requestPointerLock();
                 } else {
-                    vectors.raycast.setFromCamera(vectors.ndcCenter, camera);
-                    const { origin, direction } = vectors.raycast.ray;
-                    const rayEnd = origin.clone().add(direction.clone().multiplyScalar(100));
-                    fireRaycast(origin, rayEnd);
+                    const playerState = usePlayerState.getState();
+                    const selectedItem = playerState.inventory[playerState.selectedInventorySlot];
+                    if (selectedItem?.type === 'gun') {
+                        vectors.raycast.setFromCamera(vectors.ndcCenter, camera);
+                        const { origin, direction } = vectors.raycast.ray;
+                        const rayEnd = origin.clone().add(direction.clone().multiplyScalar(100));
+                        if (fireRaycast(origin, rayEnd)) playGunshot();
+                    } else {
+                        startItemUse();
+                    }
                 }
             } else if (e.button === 2 && document.pointerLockElement === canvas) {
                 setIsAiming(true);
@@ -155,10 +209,18 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
         };
 
         const handleMouseUp = (e) => {
+            if (e.button === 0) cancelItemUse();
             if (e.button === 2) setIsAiming(false);
         };
 
         const handleContextMenu = (e) => e.preventDefault();
+        const handleWheel = (e) => {
+            if (e.deltaY === 0) return;
+
+            e.preventDefault();
+            cancelItemUse();
+            usePlayerState.getState().selectNextInventorySlot(Math.sign(e.deltaY));
+        };
 
         // Add listeners
         document.addEventListener('pointerlockchange', handlePointerLockChange);
@@ -167,6 +229,7 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
         canvas.addEventListener('mousedown', handleMouseDown);
         canvas.addEventListener('mouseup', handleMouseUp);
         canvas.addEventListener('contextmenu', handleContextMenu);
+        canvas.addEventListener('wheel', handleWheel, { passive: false });
 
         return () => {
             document.removeEventListener('pointerlockchange', handlePointerLockChange);
@@ -175,8 +238,10 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
             canvas.removeEventListener('mousedown', handleMouseDown);
             canvas.removeEventListener('mouseup', handleMouseUp);
             canvas.removeEventListener('contextmenu', handleContextMenu);
+            canvas.removeEventListener('wheel', handleWheel);
+            cancelItemUse();
         };
-    }, [camera, vectors, fireRaycast]);
+    }, [camera, cancelItemUse, fireRaycast, playGunshot, startItemUse, unlockAudio, vectors]);
 
     // Optimized movement handler
     const handleMovement = useCallback((delta, setIsMoving, setIsSprinting) => {
@@ -287,13 +352,14 @@ export const useDinoControls = (bodyRef, setIsJumping, movementConfig = {}) => {
 
         const vel = bodyRef.current.linvel();
         bodyRef.current.setLinvel({ x: vectors.dir.x, y: vel.y, z: vectors.dir.z }, true);
+        setMovementAudio(moving, sprinting);
 
         setIsMoving(moving);
         setIsSprinting(sprinting && !isExhausted);
     }, [bodyRef, stamina, isExhausted, consumeStamina, regenerateStamina, cameraRotation, 
         characterRotation, jumpPressed, forwardPressed, backPressed, leftPressed, 
         rightPressed, sprintPressed, isCurrentlySprinting, jumpTriggered, isNearGround, jump,
-        moveSpeed, sprintMultiplier, vectors]);
+        moveSpeed, setMovementAudio, sprintMultiplier, vectors]);
 
     return {
         handleMovement,

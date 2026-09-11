@@ -1,13 +1,26 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect} from 'react';
 import './styling/index.css';
 import GameCanvas from './objects/world/GameCanvas';
-import LoginPage from './ui/LoginPage';
 import { MenuUI, MatchmakingUIWrapper } from './ui/mainMenu';
 import { STOCK_VOXY } from './logic/characters';
 import { usePlayerState } from './logic/PlayerState';
+import { createGuestSession } from './logic/session';
+
+const GuestLobbyLoading = ({ error, onRetry }) => (
+  <div className="guest-lobby-loading">
+    <p>{error ? 'Guest lobby is unavailable.' : 'Entering guest lobby...'}</p>
+    {error && (
+      <div className="guest-lobby-loading-actions">
+        <button onClick={onRetry}>Retry</button>
+      </div>
+    )}
+  </div>
+);
 
 export default function App() { 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [guestSessionError, setGuestSessionError] = useState(null);
+  const [guestSessionAttempt, setGuestSessionAttempt] = useState(0);
   const [userSession, setUserSession] = useState(null);
   const [gameState, setGameState] = useState('menu');
   const [currentMatch, setCurrentMatch] = useState(null);
@@ -17,16 +30,38 @@ export default function App() {
   
   // Get reset function from PlayerState
   const { reset: resetPlayerState } = usePlayerState();
+
+  useEffect(() => {
+    if (isLoggedIn) return undefined;
+
+    let cancelled = false;
+    const startGuestSession = async () => {
+      setGuestSessionError(null);
+      try {
+        const sessionData = await createGuestSession();
+        if (cancelled) {
+          sessionData.socket.disconnect();
+          return;
+        }
+        setUserSession(sessionData);
+        setIsLoggedIn(true);
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Guest lobby authentication failed:', error);
+          setGuestSessionError(error);
+        }
+      }
+    };
+
+    startGuestSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [guestSessionAttempt, isLoggedIn]);
   
   const onCharacterSelect = useCallback((character) => {
     setSelectedCharacter(userSession?.isGuest ? STOCK_VOXY : character);
   }, [userSession?.isGuest]);
-
-  const handleLogin = (sessionData) => {
-    // console.log("Login successful, session data:", sessionData);
-    setUserSession(sessionData);
-    setIsLoggedIn(true);
-  };
 
   const handleLogout = () => {
     // Close socket connection if it exists
@@ -134,9 +169,14 @@ export default function App() {
     setOtherPlayersData({});
   }, [currentMatch, userSession, resetPlayerState]);
 
-  // If not logged in, show the LoginPage
+  // The guest lobby is the only available entry path for now.
   if (!isLoggedIn) {
-    return <LoginPage onLoginSuccess={handleLogin} />;
+    return (
+      <GuestLobbyLoading
+        error={guestSessionError}
+        onRetry={() => setGuestSessionAttempt((attempt) => attempt + 1)}
+      />
+    );
   }
 
   // Menu UI

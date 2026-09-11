@@ -1,6 +1,31 @@
 // Simple Player State Management for Health and Stamina
 import { create } from 'zustand';
 
+const INVENTORY_SLOT_COUNT = 6;
+const GUN_INVENTORY_ITEM = { id: 'gun', type: 'gun', label: 'GUN' };
+const CONSUMABLES = {
+  apple: { label: 'APPLE', health: 5 },
+  banana: { label: 'BANANA', health: 20 },
+};
+let inventoryItemSequence = 0;
+
+const createInventory = () => [
+  GUN_INVENTORY_ITEM,
+  ...Array.from({ length: INVENTORY_SLOT_COUNT - 1 }, () => null),
+];
+
+const createConsumableInventoryItem = (type) => {
+  const consumable = CONSUMABLES[type];
+  if (!consumable) return null;
+
+  inventoryItemSequence += 1;
+  return {
+    id: `${type}-${inventoryItemSequence}`,
+    type,
+    ...consumable,
+  };
+};
+
 export const usePlayerState = create((set, get) => ({
   // Player stats
   health: 100,
@@ -9,6 +34,9 @@ export const usePlayerState = create((set, get) => ({
   maxStamina: 100,
   clipAmmo: 20,
   clipCapacity: 20,
+  inventory: createInventory(),
+  selectedInventorySlot: 0,
+  itemUseProgress: 0,
   
   // State flags
   isDead: false,
@@ -180,6 +208,61 @@ export const usePlayerState = create((set, get) => ({
       isDead: false
     });
   },
+
+  addInventoryItem: (type) => {
+    const item = createConsumableInventoryItem(type);
+    if (!item) return false;
+
+    const { inventory } = get();
+    const openSlot = inventory.findIndex((entry, index) => index > 0 && entry === null);
+    if (openSlot === -1) return false;
+
+    const nextInventory = [...inventory];
+    nextInventory[openSlot] = item;
+    set({ inventory: nextInventory });
+    return true;
+  },
+
+  selectInventorySlot: (slotIndex) => {
+    const { inventory } = get();
+    if (!Number.isInteger(slotIndex) || !inventory[slotIndex]) return false;
+
+    set({ selectedInventorySlot: slotIndex, itemUseProgress: 0 });
+    return true;
+  },
+
+  selectNextInventorySlot: (direction) => {
+    const { inventory, selectedInventorySlot } = get();
+    const stepDirection = direction >= 0 ? 1 : -1;
+
+    for (let step = 1; step <= inventory.length; step += 1) {
+      const candidate = (selectedInventorySlot + stepDirection * step + inventory.length) % inventory.length;
+      if (!inventory[candidate]) continue;
+
+      set({ selectedInventorySlot: candidate, itemUseProgress: 0 });
+      return candidate;
+    }
+
+    return selectedInventorySlot;
+  },
+
+  setItemUseProgress: (progress) => set({ itemUseProgress: Math.max(0, Math.min(1, progress)) }),
+
+  consumeSelectedInventoryItem: () => {
+    const { inventory, selectedInventorySlot, isDead } = get();
+    const item = inventory[selectedInventorySlot];
+    if (!item || item.type === 'gun' || isDead) return false;
+
+    const nextInventory = [...inventory];
+    nextInventory[selectedInventorySlot] = null;
+    set({
+      inventory: nextInventory,
+      selectedInventorySlot: 0,
+      itemUseProgress: 0,
+    });
+    get().heal(item.health);
+    return true;
+  },
   
   // Reset player state (on respawn)
   reset: () => {
@@ -200,6 +283,9 @@ export const usePlayerState = create((set, get) => ({
       health: 100,
       stamina: 100,
       clipAmmo: clipCapacity,
+      inventory: createInventory(),
+      selectedInventorySlot: 0,
+      itemUseProgress: 0,
       isDead: false,
       isExhausted: false,
       deathTimeoutId: null,

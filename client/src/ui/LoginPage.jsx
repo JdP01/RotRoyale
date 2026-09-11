@@ -1,21 +1,11 @@
 // src/LoginPage.jsx
 import React, { useState } from 'react';
 import '../styling/LoginPage.css';
-import * as Nakama from "@heroiclabs/nakama-js";
+import { createGuestSession, createNakamaClient } from '../logic/session';
 
 const googleImage = "/images/google.svg";
 const GoogleIcon = () => <img src={googleImage} alt="Google sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
 const FacebookIcon = () => <img src={googleImage} alt="Facebook sign-in" style={{ width: '20px', height: '20px', marginRight: '0px' }} />;
-const GUEST_DEVICE_ID_KEY = 'rot-royale-guest-device-id';
-
-const getGuestDeviceId = () => {
-  const existingDeviceId = window.localStorage.getItem(GUEST_DEVICE_ID_KEY);
-  if (existingDeviceId) return existingDeviceId;
-
-  const deviceId = window.crypto?.randomUUID?.() || `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  window.localStorage.setItem(GUEST_DEVICE_ID_KEY, deviceId);
-  return deviceId;
-};
 
 function LoginPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -26,7 +16,8 @@ function LoginPage({ onLoginSuccess }) {
   const imagePath = "/images/DinoConceptArt/Title.png";
 
   const connectAuthenticatedUser = async (client, session, isGuest = false) => {
-    const socket = client.createSocket(false, false);
+    const useSsl = window.location.protocol === 'https:';
+    const socket = client.createSocket(useSsl, false);
     await socket.connect(session);
     console.log("Socket connected successfully");
 
@@ -43,14 +34,6 @@ function LoginPage({ onLoginSuccess }) {
     });
   };
 
-  const createClient = () => {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const host = window.location.hostname;
-    const useSsl = window.location.protocol === 'https:';
-    const port = isLocalhost ? '7350' : (window.location.port || (useSsl ? '443' : '80'));
-    return new Nakama.Client("defaultkey", host, port, useSsl);
-  };
-
   // Updated LoginPage.jsx authentication function
   const handleUsernamePasswordLogin = async (event) => {
     event.preventDefault();
@@ -62,7 +45,7 @@ function LoginPage({ onLoginSuccess }) {
       
       // Create client with explicit configuration
 
-      const client = createClient();
+      const client = createNakamaClient();
       
       // Add timeout and retry logic
       const timeoutPromise = new Promise((_, reject) =>
@@ -119,15 +102,8 @@ function LoginPage({ onLoginSuccess }) {
     setError(null);
 
     try {
-      const deviceId = getGuestDeviceId();
-      const client = createClient();
-      const session = await client.authenticateDevice(
-        deviceId,
-        true,
-        `Guest-${deviceId.replace(/[^a-zA-Z0-9]/g, '').slice(-6)}`
-      );
-
-      await connectAuthenticatedUser(client, session, true);
+      const sessionData = await createGuestSession();
+      onLoginSuccess(sessionData);
     } catch (err) {
       console.error("Guest login error:", err);
       setError("Guest login failed. Please try again.");
